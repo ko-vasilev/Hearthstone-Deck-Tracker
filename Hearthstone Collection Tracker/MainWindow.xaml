@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
         xmlns:pluginControls="clr-namespace:Hearthstone_Collection_Tracker.Controls"
-        xmlns:DTcontrols="clr-namespace:Hearthstone_Deck_Tracker.Controls;assembly=Hearthstone_Deck_Tracker"
-        xmlns:hearthstoneDeckTracker="clr-namespace:Hearthstone_Deck_Tracker;assembly=Hearthstone_Deck_Tracker"
+        xmlns:DTcontrols="clr-namespace:Hearthstone_Deck_Tracker.Controls;assembly=HearthstoneDeckTracker"
+        xmlns:hearthstoneDeckTracker="clr-namespace:Hearthstone_Deck_Tracker;assembly=HearthstoneDeckTracker"
         Title="MainWindow" Height="300" Width="300" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
         BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1">
     <Grid>
