@@ -20,10 +20,11 @@ namespace Hearthstone_Collection_Tracker.ViewModels
             {
                 if (args.PropertyName == "SetCards")
                 {
-                    StatsByRarity = SetCards.GroupBy(c => c.Card.Rarity, c => c)
-                        .Select(gr => new CardStatsByRarity(gr.Key, gr.AsEnumerable()));
+                    List<CardStatsByRarity> cardStats = SetCards.GroupBy(c => c.Card.Rarity, c => c)
+                        .Select(gr => new CardStatsByRarity(gr.Key, gr.AsEnumerable())).ToList();
                     TotalSetStats = new CardStatsByRarity("Total", SetCards);
-
+                    cardStats.Add(TotalSetStats);
+                    StatsByRarity = cardStats;
                 }
             };
         }
@@ -91,19 +92,34 @@ namespace Hearthstone_Collection_Tracker.ViewModels
 
     public class CardStatsByRarity
     {
+        private readonly ReadOnlyDictionary<string, double> _cardProbabilities = new ReadOnlyDictionary<string, double>(
+            new Dictionary<string, double>
+            {
+                { "Common", 70.0 },
+                { "Rare", 21.4 },
+                { "Epic", 4.28 },
+                { "Legendary", 1.08 }
+            });
+
+        private readonly ReadOnlyDictionary<string, double> _goldenCardProbabilities = new ReadOnlyDictionary<string, double>(
+            new Dictionary<string, double>
+            {
+                { "Common", 1.47 },
+                { "Rare", 1.37 },
+                { "Epic", 0.308 },
+                { "Legendary", 0.111 }
+            });
+
         public CardStatsByRarity() { }
 
         public CardStatsByRarity(string rarity, IEnumerable<CardInCollection> cards)
         {
             Rarity = rarity;
-            TotalAmount = cards.Where(c => !c.IsGolden)
-                .Select(c => c.Card.Id)
+            TotalAmount = cards.Select(c => c.Card.Id)
                 .Distinct()
                 .Count() * 2;
-            PlayerHas = cards.Where(c => !c.IsGolden)
-                .Sum(c => c.Amount > 2 ? 2 : c.Amount);
-            PlayerHasGolden = cards.Where(c => c.IsGolden)
-                .Sum(c => c.Amount > 2 ? 2 : c.Amount);
+            PlayerHas = cards.Sum(c => c.AmountNonGolden > 2 ? 2 : c.AmountNonGolden);
+            PlayerHasGolden = cards.Sum(c => c.AmountGolden > 2 ? 2 : c.AmountGolden);
         }
 
         public string Rarity { get; set; }

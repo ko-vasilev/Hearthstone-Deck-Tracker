@@ -1,40 +1,42 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Xml.Serialization;
 using Hearthstone_Deck_Tracker.Hearthstone;
 
 namespace Hearthstone_Collection_Tracker.ViewModels
 {
     public class CardInCollection : INotifyPropertyChanged
     {
-        public CardInCollection(Card card, bool isGolden, int amount = 0)
+        public CardInCollection(Card card, int amountNonGolden = 0, int amountGolden = 0)
         {
             Card = card;
-            Amount = amount;
-            IsGolden = isGolden;
+            AmountNonGolden = amountNonGolden;
+            AmountGolden = amountGolden;
         }
 
+        [XmlIgnore]
         public Card Card { get; private set; }
 
-        private int _amount;
+        private int _amountNonGolden;
 
-        public int Amount
+        public int AmountNonGolden
         {
-            get { return _amount; }
+            get { return _amountNonGolden; }
             set
             {
-                _amount = value;
+                _amountNonGolden = value;
                 OnPropertyChanged();
             }
         }
 
-        private bool _isGolden;
+        private int _amountGolden;
 
-        public bool IsGolden
+        public int AmountGolden
         {
-            get { return _isGolden; }
+            get { return _amountGolden; }
             set
             {
-                _isGolden = value;
+                _amountGolden = value;
                 OnPropertyChanged();
             }
         }

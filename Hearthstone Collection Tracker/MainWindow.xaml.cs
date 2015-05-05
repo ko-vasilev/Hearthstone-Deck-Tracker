@@ -71,7 +71,7 @@ namespace Hearthstone_Collection_Tracker
         private void SetDecrease(SetDetailInfoViewModel setInfo)
         {
             var card = setInfo.SetCards.First();
-            card.Amount -= 1;
+            card.AmountNonGolden -= 1;
         }
     }
 }
