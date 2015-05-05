@@ -59,6 +59,7 @@
     <Compile Include="Controls\SetSummary.xaml.cs">
       <DependentUpon>SetSummary.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Internal\PercentageConverter.cs" />
     <Compile Include="Internal\TrulyObservableCollection.cs" />
     <Compile Include="ViewModels\CardInCollection.cs" />
     <Compile Include="HearthstoneCollectionTrackerPlugin.cs" />

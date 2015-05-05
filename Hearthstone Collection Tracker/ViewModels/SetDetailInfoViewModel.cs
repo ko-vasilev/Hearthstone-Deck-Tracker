@@ -92,22 +92,22 @@ namespace Hearthstone_Collection_Tracker.ViewModels
 
     public class CardStatsByRarity
     {
-        private readonly ReadOnlyDictionary<string, double> _cardProbabilities = new ReadOnlyDictionary<string, double>(
+        private static readonly ReadOnlyDictionary<string, double> CardProbabilities = new ReadOnlyDictionary<string, double>(
             new Dictionary<string, double>
             {
-                { "Common", 70.0 },
-                { "Rare", 21.4 },
-                { "Epic", 4.28 },
-                { "Legendary", 1.08 }
+                { "Common", 0.7 },
+                { "Rare", 0.214 },
+                { "Epic", 0.0428 },
+                { "Legendary", 0.0108 }
             });
 
-        private readonly ReadOnlyDictionary<string, double> _goldenCardProbabilities = new ReadOnlyDictionary<string, double>(
+        private static readonly ReadOnlyDictionary<string, double> GoldenCardProbabilities = new ReadOnlyDictionary<string, double>(
             new Dictionary<string, double>
             {
-                { "Common", 1.47 },
-                { "Rare", 1.37 },
-                { "Epic", 0.308 },
-                { "Legendary", 0.111 }
+                { "Common", 0.0147 },
+                { "Rare", 0.0137 },
+                { "Epic", 0.00308 },
+                { "Legendary", 0.00111 }
             });
 
         public CardStatsByRarity() { }
@@ -120,7 +120,12 @@ namespace Hearthstone_Collection_Tracker.ViewModels
                 .Count() * 2;
             PlayerHas = cards.Sum(c => c.AmountNonGolden > 2 ? 2 : c.AmountNonGolden);
             PlayerHasGolden = cards.Sum(c => c.AmountGolden > 2 ? 2 : c.AmountGolden);
+
+            OpenGoldenOdds = CalculateOpeningOdds(cards, card => 2 - card.AmountGolden, GoldenCardProbabilities);
+            OpenNonGoldenOdds = CalculateOpeningOdds(cards, card => 2 - card.AmountNonGolden, CardProbabilities);
         }
+
+        private const int CARDS_IN_PACK = 5;
 
         public string Rarity { get; set; }
 
@@ -129,5 +134,29 @@ namespace Hearthstone_Collection_Tracker.ViewModels
         public int PlayerHas { get; set; }
 
         public int PlayerHasGolden { get; set; }
+
+        public double OpenGoldenOdds { get; set; }
+
+        public double OpenNonGoldenOdds { get; set; }
+
+        private double CalculateOpeningOdds(IEnumerable<CardInCollection> cards, Func<CardInCollection, int> cardsAmount, IDictionary<string, double> probabilities)
+        {
+            double rarityOdds = 1.0;
+            foreach (var group in cards.GroupBy(c => c.Card.Rarity, cardsAmount))
+            {
+                double currentProbability = probabilities[group.Key];
+                int missingCardsAmount = group.Sum();
+                int totalCardsAmount = group.Count()*2;
+                double missingCardsOdds = (double) missingCardsAmount/totalCardsAmount;
+                double openingCardOdds = 1.0;
+                for (int i = 0; i < CARDS_IN_PACK; ++i)
+                {
+                    openingCardOdds *= 1 - currentProbability*missingCardsOdds;
+                }
+                double oddsInPack = 1 - openingCardOdds;
+                rarityOdds *= (1 - oddsInPack);
+            }
+            return 1 - rarityOdds;
+        }
     }
 }

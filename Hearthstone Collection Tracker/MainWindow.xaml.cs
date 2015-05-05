@@ -70,8 +70,10 @@ namespace Hearthstone_Collection_Tracker
 
         private void SetDecrease(SetDetailInfoViewModel setInfo)
         {
-            var card = setInfo.SetCards.First();
+            var card = setInfo.SetCards[_rnd.Next(setInfo.SetCards.Count)];
             card.AmountNonGolden -= 1;
         }
+
+        static Random _rnd = new Random();
     }
 }
