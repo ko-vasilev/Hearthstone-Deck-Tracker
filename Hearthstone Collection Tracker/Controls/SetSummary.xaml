@@ -58,7 +58,7 @@
             </DataGrid>
             <TextBlock>Cards:</TextBlock>
             <TextBlock Text="{Binding Path=TotalSetStats.TotalAmount}"></TextBlock>
-            <Button Click="ButtonBase_OnClick">Delete one card</Button>
+            <Button Click="ButtonBase_OnClick">Manage Collection</Button>
         </StackPanel>
     </GroupBox>
 </UserControl>

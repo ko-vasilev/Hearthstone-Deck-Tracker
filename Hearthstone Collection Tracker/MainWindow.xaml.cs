@@ -37,6 +37,11 @@ namespace Hearthstone_Collection_Tracker
             }
         }
 
+        public Thickness TitleBarMargin
+        {
+            get { return new Thickness(0, TitlebarHeight, 0, 0); }
+        }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -46,8 +51,6 @@ namespace Hearthstone_Collection_Tracker
                 SetName = gr.Key,
                 SetCards = new TrulyObservableCollection<CardInCollection>(gr.Value)
             });
-
-            ListViewDB.ItemsSource = Cards;
         }
 
         private void ListViewDB_KeyDown(object sender, KeyEventArgs e)
@@ -62,18 +65,14 @@ namespace Hearthstone_Collection_Tracker
 
             if (originalSource != null)
             {
-                var card = (Card)ListViewDB.SelectedItem;
-                if (card == null)
-                    return;
             }
         }
 
         private void SetDecrease(SetDetailInfoViewModel setInfo)
         {
-            var card = setInfo.SetCards[_rnd.Next(setInfo.SetCards.Count)];
-            card.AmountNonGolden -= 1;
-        }
+            CardCollectionEditor.ItemsSource = setInfo.SetCards;
 
-        static Random _rnd = new Random();
+            FlyoutCollection.IsOpen = true;
+        }
     }
 }
