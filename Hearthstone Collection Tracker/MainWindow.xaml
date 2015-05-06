@@ -10,7 +10,7 @@
         BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1">
     <controls:MetroWindow.Flyouts>
         <controls:FlyoutsControl Margin="{Binding TitleBarMargin, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
-            <controls:Flyout x:Name="FlyoutCollection" Position="Right" Panel.ZIndex="102" Header="Collection" TitleVisibility="Hidden"
+            <controls:Flyout x:Name="FlyoutCollection" Position="Right" Panel.ZIndex="102" Header="Collection"
                              Width="{Binding Width, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
                 <ListView x:Name="CardCollectionEditor" Background="DimGray" Foreground="White"
                                     FontWeight="Bold" BorderThickness="1"
