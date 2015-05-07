@@ -41,6 +41,12 @@ namespace Hearthstone_Collection_Tracker.ViewModels
             }
         }
 
+        [XmlIgnore]
+        public string CardClass
+        {
+            get { return Card == null ? string.Empty : Card.GetPlayerClass; }
+        }
+
         #region INotifyPropertyChanged interface
         public event PropertyChangedEventHandler PropertyChanged;
 

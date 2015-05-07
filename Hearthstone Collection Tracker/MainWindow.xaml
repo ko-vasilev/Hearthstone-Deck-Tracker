@@ -6,51 +6,91 @@
         xmlns:pluginControls="clr-namespace:Hearthstone_Collection_Tracker.Controls"
         xmlns:DTcontrols="clr-namespace:Hearthstone_Deck_Tracker.Controls;assembly=HearthstoneDeckTracker"
         xmlns:hearthstoneDeckTracker="clr-namespace:Hearthstone_Deck_Tracker;assembly=HearthstoneDeckTracker"
-        Title="MainWindow" Height="300" Width="300" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
-        BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1">
+        Title="MainWindow" Width="400" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+        BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}" SizeToContent="Height"
+        ContentRendered="MainWindow_OnContentRendered">
     <controls:MetroWindow.Flyouts>
         <controls:FlyoutsControl Margin="{Binding TitleBarMargin, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
             <controls:Flyout x:Name="FlyoutCollection" Position="Right" Panel.ZIndex="102" Header="Collection"
-                             Width="{Binding Width, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
-                <ListView x:Name="CardCollectionEditor" Background="DimGray" Foreground="White"
+                             MaxWidth="240">
+                <DockPanel LastChildFill="True" Height="Auto">
+                    <controls:ToggleSwitch x:Name="ShowOnlyMissing" IsChecked="{Binding Path=Filter.OnlyMissing, Mode=TwoWay}"
+                                           OffLabel="Show all" OnLabel="Show only missing" DockPanel.Dock="Top" />
+                    <controls:ToggleSwitch x:Name="EditingGoldenCollection" IsChecked="{Binding Path=Filter.GoldenCards, Mode=TwoWay}"
+                                           OffLabel="Non-golden" OnLabel="Golden" DockPanel.Dock="Top" />
+                    <TextBox controls:TextBoxHelper.Watermark="Search..." x:Name="TextBoxCollectionFilter"
+                            VerticalContentAlignment="Center" HorizontalAlignment="Left" Height="26"
+                            Margin="3,0,0,0" TextWrapping="NoWrap" Text="{Binding Path=Filter.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            VerticalAlignment="Top"
+                            TextChanged="TextBoxCollectionFilter_OnTextChanged" Width="220"
+                            PreviewKeyDown="TextBoxCollectionFilter_OnPreviewKeyDown" DockPanel.Dock="Top" />
+                    
+                    <ListView x:Name="CardCollectionEditor" Background="DimGray" Foreground="White"
                                     FontWeight="Bold" BorderThickness="1"
                                     ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                    ScrollViewer.CanContentScroll="True" FontFamily="Arial" Margin="0,6,0,6"
+                                    ScrollViewer.CanContentScroll="False" FontFamily="Arial" Margin="0,6,0,0"
                                     HorizontalAlignment="Left"
-                                    Width="235" KeyDown="ListViewDB_KeyDown"
-                                    MouseLeftButtonUp="ListViewDB_MouseLeftButtonUp">
-                    <ListView.Resources>
-                        <Style TargetType="GridViewColumnHeader">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </Style>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
-                            <Setter Property="ToolTipService.ShowDuration" Value="60000" />
-                            <Setter Property="ToolTipService.IsEnabled"
+                                    MaxWidth="235" KeyDown="ListViewDB_KeyDown"
+                                    MouseLeftButtonUp="ListViewDB_MouseLeftButtonUp"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+   VirtualizingStackPanel.VirtualizationMode="Recycling">
+                        <ListView.Resources>
+                            <Style TargetType="GridViewColumnHeader">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </Style>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+                                <Setter Property="ToolTipService.ShowDuration" Value="60000" />
+                                <Setter Property="ToolTipService.IsEnabled"
                                     Value="False" />
-                            <Setter Property="Margin" Value="-4,-3,-3,0"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected"
+                                <Setter Property="Margin" Value="-4,-3,-3,0"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected"
                                          Value="True">
-                                    <Setter Property="BorderBrush"
+                                        <Setter Property="BorderBrush"
                                             Value="Blue" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListView.Resources>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <DTcontrols:Card DataContext="{Binding Card}" Grid.Column="0"/>
-                                <hearthstoneDeckTracker:OutlinedTextBlock Width="28" Height="25" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.Resources>
+                        <ListView.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT" FontSize="20" Text="{Binding Name}"/>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                                <!--<GroupStyle.ContainerStyle>
+                                    <Style TargetType="{x:Type GroupItem}">
+                                        <Setter Property="Margin" Value="0,0,0,5"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                    <GroupBox Header="{Binding Name}">
+                                                        <ItemsPresenter />
+                                                    </GroupBox>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </GroupStyle.ContainerStyle>-->
+                            </GroupStyle>
+                        </ListView.GroupStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <DTcontrols:Card DataContext="{Binding Card}" Grid.Column="0"/>
+                                    <hearthstoneDeckTracker:OutlinedTextBlock Width="28" Height="25" VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Text="{Binding AmountNonGolden}" Fill="{Binding ColorPlayer}"
                                  FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT"
                                  TextAlignment="Center" FontSize="20" Grid.Column="0" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </DockPanel>
             </controls:Flyout>
         </controls:FlyoutsControl>
     </controls:MetroWindow.Flyouts>

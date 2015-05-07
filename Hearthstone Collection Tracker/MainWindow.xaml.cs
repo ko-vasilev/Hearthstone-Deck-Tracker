@@ -1,7 +1,9 @@
 ﻿using Hearthstone_Deck_Tracker.Hearthstone;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Hearthstone_Collection_Tracker.Internal;
 using Hearthstone_Collection_Tracker.ViewModels;
+using Hearthstone_Deck_Tracker;
 
 namespace Hearthstone_Collection_Tracker
 {
@@ -51,6 +54,9 @@ namespace Hearthstone_Collection_Tracker
                 SetName = gr.Key,
                 SetCards = new TrulyObservableCollection<CardInCollection>(gr.Value)
             });
+
+            Filter = new FilterSettings();
+            Filter.PropertyChanged += (sender, args) => FilterCollection();
         }
 
         private void ListViewDB_KeyDown(object sender, KeyEventArgs e)
@@ -72,7 +78,83 @@ namespace Hearthstone_Collection_Tracker
         {
             CardCollectionEditor.ItemsSource = setInfo.SetCards;
 
+            OpenCollectionFlyout();
+        }
+
+        #region Collection management
+
+        public FilterSettings Filter { get; set; }
+
+        private void OpenCollectionFlyout()
+        {
+            ListCollectionView view = (ListCollectionView)CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource);
+            view.Filter = CardsFilter;
+            view.GroupDescriptions.Add(new PropertyGroupDescription("CardClass"));
+            view.CustomSort = new CardInCollectionComparer();
+
+            TextBoxCollectionFilter.Focus();
             FlyoutCollection.IsOpen = true;
+        }
+
+        private bool CardsFilter(object card)
+        {
+            CardInCollection c = card as CardInCollection;
+            if (Filter.OnlyMissing)
+            {
+                if ((Filter.GoldenCards && c.AmountGolden >= 2) || (!Filter.GoldenCards && c.AmountNonGolden >= 2))
+                {
+                    return false;
+                }
+            }
+            if (Filter.FormattedText == string.Empty)
+                return true;
+            var cardName = Helper.RemoveDiacritics(c.Card.LocalizedName.ToLowerInvariant(), true);
+            return cardName.Contains(Filter.FormattedText);
+        }
+
+        private void FilterCollection()
+        {
+            if (CardCollectionEditor.ItemsSource != null)
+            {
+                CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource).Refresh();
+            }
+        }
+
+        private void TextBoxCollectionFilter_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            
+        }
+
+        private void TextBoxCollectionFilter_OnPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+
+        }
+
+        #endregion
+
+        private void MainWindow_OnContentRendered(object sender, EventArgs e)
+        {
+            this.SizeToContent = SizeToContent.Manual;
+        }
+    }
+
+    internal class CardInCollectionComparer : IComparer
+    {
+        public int Compare(object x, object y)
+        {
+            if (x is CardInCollection && y is CardInCollection)
+            {
+                CardInCollection cardX = (CardInCollection)x;
+                CardInCollection cardY = (CardInCollection)y;
+                int manaCostCompare = cardX.Card.Cost.CompareTo(cardY.Card.Cost);
+                if (manaCostCompare != 0)
+                    return manaCostCompare;
+                return cardX.Card.LocalizedName.CompareTo(cardY.Card.LocalizedName);
+            }
+            else
+            {
+                return 1;
+            }
         }
     }
 }

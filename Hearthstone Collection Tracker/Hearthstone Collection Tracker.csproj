@@ -64,6 +64,7 @@
     <Compile Include="ViewModels\CardInCollection.cs" />
     <Compile Include="HearthstoneCollectionTrackerPlugin.cs" />
     <Compile Include="SetCardsManager.cs" />
+    <Compile Include="ViewModels\FilterSettings.cs" />
     <Compile Include="ViewModels\SetDetailInfoViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
