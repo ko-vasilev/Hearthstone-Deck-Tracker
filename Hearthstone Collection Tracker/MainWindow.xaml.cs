@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +16,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Hearthstone_Collection_Tracker.Internal;
 using Hearthstone_Collection_Tracker.ViewModels;
 using Hearthstone_Deck_Tracker;
@@ -56,7 +58,10 @@ namespace Hearthstone_Collection_Tracker
             });
 
             Filter = new FilterSettings();
-            Filter.PropertyChanged += (sender, args) => FilterCollection();
+            Filter.PropertyChanged += (sender, args) =>
+            {
+                HandleFilterChange(sender, args);
+            };
         }
 
         private void ListViewDB_KeyDown(object sender, KeyEventArgs e)
@@ -112,17 +117,41 @@ namespace Hearthstone_Collection_Tracker
             return cardName.Contains(Filter.FormattedText);
         }
 
+        private CancellationTokenSource filterCancel = new CancellationTokenSource();
+
+        private async Task HandleFilterChange(object sender, PropertyChangedEventArgs args)
+        {
+            if (filterCancel != null && !filterCancel.IsCancellationRequested)
+            {
+                filterCancel.Cancel();
+            }
+
+            if (args.PropertyName == "Text")
+            {
+                if (Filter.Text.Length < 4)
+                {
+                    // wait 300 ms before filtering
+                    filterCancel = new CancellationTokenSource();
+                    Task t = Task.Delay(TimeSpan.FromMilliseconds(300), filterCancel.Token);
+                    await t;
+                }
+                FilterCollection();
+            }
+            else
+            {
+                FilterCollection();
+            }
+        }
+
         private void FilterCollection()
         {
             if (CardCollectionEditor.ItemsSource != null)
             {
-                CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource).Refresh();
+                Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource).Refresh();
+                }));
             }
-        }
-
-        private void TextBoxCollectionFilter_OnTextChanged(object sender, TextChangedEventArgs e)
-        {
-            
         }
 
         private void TextBoxCollectionFilter_OnPreviewKeyDown(object sender, KeyEventArgs e)

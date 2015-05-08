@@ -22,13 +22,11 @@
                     <TextBox controls:TextBoxHelper.Watermark="Search..." x:Name="TextBoxCollectionFilter"
                             VerticalContentAlignment="Center" HorizontalAlignment="Left" Height="26"
                             Margin="3,0,0,0" TextWrapping="NoWrap" Text="{Binding Path=Filter.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            VerticalAlignment="Top"
-                            TextChanged="TextBoxCollectionFilter_OnTextChanged" Width="220"
+                            VerticalAlignment="Top" Width="220"
                             PreviewKeyDown="TextBoxCollectionFilter_OnPreviewKeyDown" DockPanel.Dock="Top" />
                     
                     <ListView x:Name="CardCollectionEditor" Background="DimGray" Foreground="White"
                                     FontWeight="Bold" BorderThickness="1"
-                                    ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                     ScrollViewer.CanContentScroll="False" FontFamily="Arial" Margin="0,6,0,0"
                                     HorizontalAlignment="Left"
