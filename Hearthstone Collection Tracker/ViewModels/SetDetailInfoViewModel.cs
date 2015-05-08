@@ -115,14 +115,13 @@ namespace Hearthstone_Collection_Tracker.ViewModels
         public CardStatsByRarity(string rarity, IEnumerable<CardInCollection> cards)
         {
             Rarity = rarity;
-            TotalAmount = cards.Select(c => c.Card.Id)
-                .Distinct()
-                .Count() * 2;
-            PlayerHas = cards.Sum(c => c.AmountNonGolden > 2 ? 2 : c.AmountNonGolden);
-            PlayerHasGolden = cards.Sum(c => c.AmountGolden > 2 ? 2 : c.AmountGolden);
+            TotalAmount = cards.Select(c => c.MaxAmountInCollection)
+                .Sum();
+            PlayerHas = cards.Sum(c => c.AmountNonGolden);
+            PlayerHasGolden = cards.Sum(c => c.AmountGolden);
 
-            OpenGoldenOdds = CalculateOpeningOdds(cards, card => 2 - card.AmountGolden, GoldenCardProbabilities);
-            OpenNonGoldenOdds = CalculateOpeningOdds(cards, card => 2 - card.AmountNonGolden, CardProbabilities);
+            OpenGoldenOdds = CalculateOpeningOdds(cards, card => card.MaxAmountInCollection - card.AmountGolden, GoldenCardProbabilities);
+            OpenNonGoldenOdds = CalculateOpeningOdds(cards, card => card.MaxAmountInCollection - card.AmountNonGolden, CardProbabilities);
         }
 
         private const int CARDS_IN_PACK = 5;
@@ -142,11 +141,11 @@ namespace Hearthstone_Collection_Tracker.ViewModels
         private double CalculateOpeningOdds(IEnumerable<CardInCollection> cards, Func<CardInCollection, int> cardsAmount, IDictionary<string, double> probabilities)
         {
             double rarityOdds = 1.0;
-            foreach (var group in cards.GroupBy(c => c.Card.Rarity, cardsAmount))
+            foreach (var group in cards.GroupBy(c => c.Card.Rarity, c => new{ card = c, amount = cardsAmount(c)}))
             {
                 double currentProbability = probabilities[group.Key];
-                int missingCardsAmount = group.Sum();
-                int totalCardsAmount = group.Count()*2;
+                int missingCardsAmount = group.Sum(c => c.amount);
+                int totalCardsAmount = group.Sum(c => c.card.MaxAmountInCollection);
                 double missingCardsOdds = (double) missingCardsAmount/totalCardsAmount;
                 double openingCardOdds = 1.0;
                 for (int i = 0; i < CARDS_IN_PACK; ++i)

@@ -64,7 +64,7 @@ namespace Hearthstone_Collection_Tracker
                 var cards = Game.GetActualCards();
                 SetCards = CollectableSets.ToDictionary(set => set,
                     set => cards.Where(c => c.Set == set)
-                                .Select(c => new CardInCollection(c, 2, 2))
+                                .Select(c => new CardInCollection(c, 0, 0))
                                 .ToList());
             }
         }

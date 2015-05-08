@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Xml.Serialization;
 using Hearthstone_Deck_Tracker.Hearthstone;
@@ -38,6 +39,16 @@ namespace Hearthstone_Collection_Tracker.ViewModels
             {
                 _amountGolden = value;
                 OnPropertyChanged();
+            }
+        }
+
+        public int MaxAmountInCollection
+        {
+            get
+            {
+                if (Card == null)
+                    throw new ArgumentNullException();
+                return Card.Rarity == "Legendary" ? 1 : 2;
             }
         }
 

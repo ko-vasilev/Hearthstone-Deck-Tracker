@@ -30,8 +30,7 @@
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                     ScrollViewer.CanContentScroll="False" FontFamily="Arial" Margin="0,6,0,0"
                                     HorizontalAlignment="Left"
-                                    MaxWidth="235" KeyDown="ListViewDB_KeyDown"
-                                    MouseLeftButtonUp="ListViewDB_MouseLeftButtonUp"
+                                    MaxWidth="235"
                               VirtualizingStackPanel.IsVirtualizing="True"
    VirtualizingStackPanel.VirtualizationMode="Recycling">
                         <ListView.Resources>

@@ -64,11 +64,11 @@ namespace Hearthstone_Collection_Tracker
             };
         }
 
-        private void ListViewDB_KeyDown(object sender, KeyEventArgs e)
+        private void CardCollectionEditor_KeyDown(object sender, KeyEventArgs e)
         {
         }
 
-        private void ListViewDB_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void CardCollectionEditor_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             var originalSource = (DependencyObject)e.OriginalSource;
             while ((originalSource != null) && !(originalSource is ListViewItem))
@@ -106,7 +106,8 @@ namespace Hearthstone_Collection_Tracker
             CardInCollection c = card as CardInCollection;
             if (Filter.OnlyMissing)
             {
-                if ((Filter.GoldenCards && c.AmountGolden >= 2) || (!Filter.GoldenCards && c.AmountNonGolden >= 2))
+                if ((Filter.GoldenCards && c.AmountGolden >= c.MaxAmountInCollection)
+                    || (!Filter.GoldenCards && c.AmountNonGolden >= c.MaxAmountInCollection))
                 {
                     return false;
                 }
@@ -156,7 +157,71 @@ namespace Hearthstone_Collection_Tracker
 
         private void TextBoxCollectionFilter_OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
+            var index = CardCollectionEditor.SelectedIndex;
+            CardInCollection card = null;
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    if (CardCollectionEditor.SelectedItem != null)
+                        card = (CardInCollection)CardCollectionEditor.SelectedItem;
+                    else if (CardCollectionEditor.Items.Count > 0)
+                        card = (CardInCollection)CardCollectionEditor.Items[0];
+                    break;
+                case Key.D1:
+                    if (CardCollectionEditor.Items.Count > 0)
+                        card = (CardInCollection)CardCollectionEditor.Items[0];
+                    break;
+                case Key.D2:
+                    if (CardCollectionEditor.Items.Count > 1)
+                        card = (CardInCollection)CardCollectionEditor.Items[1];
+                    break;
+                case Key.D3:
+                    if (CardCollectionEditor.Items.Count > 2)
+                        card = (CardInCollection)CardCollectionEditor.Items[2];
+                    break;
+                case Key.D4:
+                    if (CardCollectionEditor.Items.Count > 3)
+                        card = (CardInCollection)CardCollectionEditor.Items[3];
+                    break;
+                case Key.D5:
+                    if (CardCollectionEditor.Items.Count > 4)
+                        card = (CardInCollection)CardCollectionEditor.Items[4];
+                    break;
+                case Key.Down:
+                    if (index < CardCollectionEditor.Items.Count - 1)
+                        CardCollectionEditor.SelectedIndex += 1;
+                    break;
+                case Key.Up:
+                    if (index > 0)
+                        CardCollectionEditor.SelectedIndex -= 1;
+                    break;
+            }
+            if (card != null)
+            {
+                UpdateCardsAmount(card, 1);
+                e.Handled = true;
+            }
+        }
 
+        private void UpdateCardsAmount(CardInCollection card, int difference)
+        {
+            if (Filter.GoldenCards)
+            {
+                int newValue = card.AmountGolden + difference;
+                newValue = Clamp(newValue, 0, card.MaxAmountInCollection);
+                card.AmountGolden = newValue;
+            }
+            else
+            {
+                int newValue = card.AmountNonGolden + difference;
+                newValue = Clamp(newValue, 0, card.MaxAmountInCollection);
+                card.AmountNonGolden = newValue;
+            }
+        }
+
+        public static int Clamp(int value, int min, int max)
+        {
+            return (value < min) ? min : (value > max) ? max : value;
         }
 
         #endregion
