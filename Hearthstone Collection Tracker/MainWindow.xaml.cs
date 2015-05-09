@@ -118,13 +118,13 @@ namespace Hearthstone_Collection_Tracker
             return cardName.Contains(Filter.FormattedText);
         }
 
-        private CancellationTokenSource filterCancel = new CancellationTokenSource();
+        private CancellationTokenSource _filterCancel = new CancellationTokenSource();
 
         private async Task HandleFilterChange(object sender, PropertyChangedEventArgs args)
         {
-            if (filterCancel != null && !filterCancel.IsCancellationRequested)
+            if (_filterCancel != null && !_filterCancel.IsCancellationRequested)
             {
-                filterCancel.Cancel();
+                _filterCancel.Cancel();
             }
 
             if (args.PropertyName == "Text")
@@ -132,8 +132,8 @@ namespace Hearthstone_Collection_Tracker
                 if (Filter.Text.Length < 4)
                 {
                     // wait 300 ms before filtering
-                    filterCancel = new CancellationTokenSource();
-                    Task t = Task.Delay(TimeSpan.FromMilliseconds(300), filterCancel.Token);
+                    _filterCancel = new CancellationTokenSource();
+                    Task t = Task.Delay(TimeSpan.FromMilliseconds(300), _filterCancel.Token);
                     await t;
                 }
                 FilterCollection();
@@ -148,10 +148,8 @@ namespace Hearthstone_Collection_Tracker
         {
             if (CardCollectionEditor.ItemsSource != null)
             {
-                Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(() =>
-                {
-                    CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource).Refresh();
-                }));
+                CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource).Refresh();
+
             }
         }
 
