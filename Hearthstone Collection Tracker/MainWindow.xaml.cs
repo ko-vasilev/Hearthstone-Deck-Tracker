@@ -282,12 +282,23 @@ namespace Hearthstone_Collection_Tracker
 
     internal class CardInCollectionComparer : IComparer
     {
+        private const string Neutral = "Neutral";
         public int Compare(object x, object y)
         {
             if (x is CardInCollection && y is CardInCollection)
             {
                 CardInCollection cardX = (CardInCollection)x;
                 CardInCollection cardY = (CardInCollection)y;
+                // workaround to put neutral cards last
+                bool xIsNeutral = cardX.CardClass == Neutral;
+                bool yIsNeutral = cardY.CardClass == Neutral;
+                if (xIsNeutral && !yIsNeutral)
+                    return 1;
+                if (!xIsNeutral && yIsNeutral)
+                    return -1;
+                int cardClassCompare = cardX.CardClass.CompareTo(cardY.CardClass);
+                if (cardClassCompare != 0)
+                    return cardClassCompare;
                 int manaCostCompare = cardX.Card.Cost.CompareTo(cardY.Card.Cost);
                 if (manaCostCompare != 0)
                     return manaCostCompare;
