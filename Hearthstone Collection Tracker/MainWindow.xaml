@@ -26,13 +26,14 @@
                             PreviewKeyDown="TextBoxCollectionFilter_OnPreviewKeyDown" DockPanel.Dock="Top" />
                     
                     <ListView x:Name="CardCollectionEditor" Background="DimGray" Foreground="White"
-                                    FontWeight="Bold" BorderThickness="1"
-                                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                    ScrollViewer.CanContentScroll="False" FontFamily="Arial" Margin="0,6,0,0"
-                                    HorizontalAlignment="Left"
-                                    MaxWidth="235"
+                              FontWeight="Bold" BorderThickness="1"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.CanContentScroll="False" FontFamily="Arial" Margin="0,6,0,0"
+                              HorizontalAlignment="Left" MaxWidth="235"
                               VirtualizingStackPanel.IsVirtualizing="True"
-   VirtualizingStackPanel.VirtualizationMode="Recycling">
+                              VirtualizingStackPanel.VirtualizationMode="Recycling"
+                              KeyDown="CardCollectionEditor_OnKeyDown" MouseLeftButtonUp="CardCollectionEditor_OnMouseLeftButtonUp"
+                              MouseRightButtonUp="CardCollectionEditor_OnMouseRightButtonUp">
                         <ListView.Resources>
                             <Style TargetType="GridViewColumnHeader">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -80,7 +81,7 @@
                                 <Grid>
                                     <DTcontrols:Card DataContext="{Binding Card}" Grid.Column="0"/>
                                     <hearthstoneDeckTracker:OutlinedTextBlock Width="28" Height="25" VerticalAlignment="Center" HorizontalAlignment="Right"
-                                 Text="{Binding AmountNonGolden}" Fill="{Binding ColorPlayer}"
+                                 Text="{Binding AmountNonGolden}" Fill="{Binding Path=Card.ColorPlayer}"
                                  FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT"
                                  TextAlignment="Center" FontSize="20" Grid.Column="0" />
                                 </Grid>

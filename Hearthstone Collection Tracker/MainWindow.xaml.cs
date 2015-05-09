@@ -149,7 +149,6 @@ namespace Hearthstone_Collection_Tracker
             if (CardCollectionEditor.ItemsSource != null)
             {
                 CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource).Refresh();
-
             }
         }
 
@@ -227,6 +226,57 @@ namespace Hearthstone_Collection_Tracker
         private void MainWindow_OnContentRendered(object sender, EventArgs e)
         {
             this.SizeToContent = SizeToContent.Manual;
+        }
+
+        private void CardCollectionEditor_OnKeyDown(object sender, KeyEventArgs e)
+        {
+            int? amount = null;
+            if (e.Key == Key.Enter)
+            {
+                amount = 1;
+            }
+            else if (e.Key == Key.Back || e.Key == Key.Delete)
+            {
+                amount = -1;
+            }
+            if (amount.HasValue)
+            {
+                CardInCollection card = (CardInCollection)CardCollectionEditor.SelectedItem;
+                if (card == null || string.IsNullOrEmpty(card.Card.Name))
+                    return;
+
+                UpdateCardsAmount(card, amount.Value);
+            }
+        }
+
+        private void CardCollectionEditor_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var originalSource = (DependencyObject)e.OriginalSource;
+            while ((originalSource != null) && !(originalSource is ListViewItem))
+                originalSource = VisualTreeHelper.GetParent(originalSource);
+
+            if (originalSource != null)
+            {
+                var card = (CardInCollection)CardCollectionEditor.SelectedItem;
+                if (card == null)
+                    return;
+                UpdateCardsAmount(card, 1);
+            }
+        }
+
+        private void CardCollectionEditor_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var originalSource = (DependencyObject)e.OriginalSource;
+            while ((originalSource != null) && !(originalSource is ListViewItem))
+                originalSource = VisualTreeHelper.GetParent(originalSource);
+
+            if (originalSource != null)
+            {
+                var card = (CardInCollection)CardCollectionEditor.SelectedItem;
+                if (card == null)
+                    return;
+                UpdateCardsAmount(card, -1);
+            }
         }
     }
 
