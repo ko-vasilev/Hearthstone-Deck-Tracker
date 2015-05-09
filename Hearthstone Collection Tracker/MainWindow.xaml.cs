@@ -94,7 +94,10 @@ namespace Hearthstone_Collection_Tracker
         {
             ListCollectionView view = (ListCollectionView)CollectionViewSource.GetDefaultView(CardCollectionEditor.ItemsSource);
             view.Filter = CardsFilter;
-            view.GroupDescriptions.Add(new PropertyGroupDescription("CardClass"));
+            if (!view.GroupDescriptions.Any())
+            {
+                view.GroupDescriptions.Add(new PropertyGroupDescription("CardClass"));
+            }
             view.CustomSort = new CardInCollectionComparer();
 
             TextBoxCollectionFilter.Focus();

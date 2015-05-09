@@ -13,7 +13,7 @@
     <controls:MetroWindow.Flyouts>
         <controls:FlyoutsControl Margin="{Binding TitleBarMargin, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
             <controls:Flyout x:Name="FlyoutCollection" Position="Right" Panel.ZIndex="102" Header="Collection"
-                             MaxWidth="240">
+                             MaxWidth="245">
                 <DockPanel LastChildFill="True" Height="Auto">
                     <controls:ToggleSwitch x:Name="ShowOnlyMissing" IsChecked="{Binding Path=Filter.OnlyMissing, Mode=TwoWay}"
                                            OffLabel="Show all" OnLabel="Show only missing" DockPanel.Dock="Top" />
@@ -29,7 +29,7 @@
                               FontWeight="Bold" BorderThickness="1"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                               ScrollViewer.CanContentScroll="False" FontFamily="Arial" Margin="0,6,0,0"
-                              HorizontalAlignment="Left" MaxWidth="235"
+                              HorizontalAlignment="Left" MaxWidth="240"
                               VirtualizingStackPanel.IsVirtualizing="True"
                               VirtualizingStackPanel.VirtualizationMode="Recycling"
                               KeyDown="CardCollectionEditor_OnKeyDown" MouseLeftButtonUp="CardCollectionEditor_OnMouseLeftButtonUp"
@@ -55,25 +55,20 @@
                         </ListView.Resources>
                         <ListView.GroupStyle>
                             <GroupStyle>
-                                <GroupStyle.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT" FontSize="20" Text="{Binding Name}"/>
-                                    </DataTemplate>
-                                </GroupStyle.HeaderTemplate>
-                                <!--<GroupStyle.ContainerStyle>
+                                <GroupStyle.ContainerStyle>
                                     <Style TargetType="{x:Type GroupItem}">
                                         <Setter Property="Margin" Value="0,0,0,5"/>
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="{x:Type GroupItem}">
-                                                    <GroupBox Header="{Binding Name}">
-                                                        <ItemsPresenter />
-                                                    </GroupBox>
+                                                    <Expander Header="{Binding Name}" IsExpanded="True">
+                                                        <ItemsPresenter></ItemsPresenter>
+                                                    </Expander>
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>
                                     </Style>
-                                </GroupStyle.ContainerStyle>-->
+                                </GroupStyle.ContainerStyle>
                             </GroupStyle>
                         </ListView.GroupStyle>
                         <ListView.ItemTemplate>
