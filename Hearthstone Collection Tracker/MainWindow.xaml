@@ -29,11 +29,27 @@
                               FontWeight="Bold" BorderThickness="1"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                               ScrollViewer.CanContentScroll="False" FontFamily="Arial" Margin="0,6,0,0"
-                              HorizontalAlignment="Left" MaxWidth="240"
+                              HorizontalAlignment="Left" MinWidth="250"
                               VirtualizingStackPanel.IsVirtualizing="True"
                               VirtualizingStackPanel.VirtualizationMode="Recycling"
                               KeyDown="CardCollectionEditor_OnKeyDown" MouseLeftButtonUp="CardCollectionEditor_OnMouseLeftButtonUp"
-                              MouseRightButtonUp="CardCollectionEditor_OnMouseRightButtonUp">
+                              MouseRightButtonUp="CardCollectionEditor_OnMouseRightButtonUp" HorizontalContentAlignment="Left">
+                        <ListView.Style>
+                            <Style TargetType="ListView">
+                                <Style.Triggers>
+                                    <Trigger Property="HasItems" Value="False">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListView">
+                                                    <TextBlock Text="No matching cards" FontSize="20"
+                                                               FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT" />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.Style>
                         <ListView.Resources>
                             <Style TargetType="GridViewColumnHeader">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -61,7 +77,7 @@
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="{x:Type GroupItem}">
-                                                    <Expander Header="{Binding Name}" IsExpanded="True">
+                                                    <Expander Header="{Binding Name}" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                                         <ItemsPresenter></ItemsPresenter>
                                                     </Expander>
                                                 </ControlTemplate>
@@ -78,7 +94,7 @@
                                     <hearthstoneDeckTracker:OutlinedTextBlock Width="28" Height="25" VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Text="{Binding AmountNonGolden}" Fill="{Binding Path=Card.ColorPlayer}"
                                  FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT"
-                                 TextAlignment="Center" FontSize="20" Grid.Column="0" />
+                                 TextAlignment="Center" FontSize="20" Grid.Column="0" Margin="0, 0, 10, 0" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>

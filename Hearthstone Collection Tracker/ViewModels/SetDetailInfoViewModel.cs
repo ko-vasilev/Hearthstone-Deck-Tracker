@@ -95,19 +95,19 @@ namespace Hearthstone_Collection_Tracker.ViewModels
         private static readonly ReadOnlyDictionary<string, double> CardProbabilities = new ReadOnlyDictionary<string, double>(
             new Dictionary<string, double>
             {
-                { "Common", 0.7 },
-                { "Rare", 0.214 },
-                { "Epic", 0.0428 },
+                { "Common", 0.6997 },
+                { "Rare", 0.2140 },
+                { "Epic", 0.0429 },
                 { "Legendary", 0.0108 }
             });
 
         private static readonly ReadOnlyDictionary<string, double> GoldenCardProbabilities = new ReadOnlyDictionary<string, double>(
             new Dictionary<string, double>
             {
-                { "Common", 0.0147 },
-                { "Rare", 0.0137 },
-                { "Epic", 0.00308 },
-                { "Legendary", 0.00111 }
+                { "Common", 0.0146 },
+                { "Rare", 0.0138 },
+                { "Epic", 0.0031 },
+                { "Legendary", 0.0011 }
             });
 
         public CardStatsByRarity() { }
