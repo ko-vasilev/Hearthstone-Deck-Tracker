@@ -90,9 +90,28 @@
                                     <DTcontrols:Card DataContext="{Binding Card}" Grid.Column="0"></DTcontrols:Card>
                                     <hearthstoneDeckTracker:OutlinedTextBlock Width="28" Height="25"
                                          VerticalAlignment="Center" HorizontalAlignment="Right"
-                                         Text="{Binding AmountNonGolden}" Fill="{Binding Path=Card.ColorPlayer}"
+                                         Fill="{Binding Path=Card.ColorPlayer}"
                                          FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT"
-                                         TextAlignment="Center" FontSize="20" Grid.Column="0" Margin="0, 0, 10, 0" />
+                                         TextAlignment="Center" FontSize="20" Grid.Column="0" Margin="0, 0, 10, 0">
+                                        <hearthstoneDeckTracker:OutlinedTextBlock.Resources>
+                                            <Style TargetType="hearthstoneDeckTracker:OutlinedTextBlock">
+                                                <Setter Property="Text" Value="{Binding AmountNonGolden}"></Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Value="True">
+                                                        <DataTrigger.Binding>
+                                                            <Binding Path="Filter.GoldenCards">
+                                                                <Binding.RelativeSource>
+                                                                    <RelativeSource Mode="FindAncestor" AncestorType="Window">
+                                                                    </RelativeSource>
+                                                                </Binding.RelativeSource>
+                                                            </Binding>
+                                                        </DataTrigger.Binding>
+                                                        <Setter Property="Text" Value="{Binding AmountGolden}"></Setter>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </hearthstoneDeckTracker:OutlinedTextBlock.Resources>
+                                    </hearthstoneDeckTracker:OutlinedTextBlock>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
