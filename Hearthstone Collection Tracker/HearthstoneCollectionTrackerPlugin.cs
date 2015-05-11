@@ -15,7 +15,7 @@ namespace Hearthstone_Collection_Tracker
         {
             MainMenuItem = new MenuItem
             {
-                Header = "Collection Tracker"
+                Header = ButtonText
             };
 
             MainMenuItem.Click += (sender, args) =>
@@ -59,7 +59,9 @@ namespace Hearthstone_Collection_Tracker
 
         public string Description
         {
-            get { return "Helps user to track their HS card collection"; }
+            get { return @"Helps user to keep track on packs progess, suggesting the packs that will most probably contain missing cards.
+Suggestions and bug reports can be sent to https://github.com/ko-vasilev/Hearthstone-Deck-Tracker or directly to e-mail oppa.kostya.bko@gmail.com.";
+            }
         }
 
         public string ButtonText
