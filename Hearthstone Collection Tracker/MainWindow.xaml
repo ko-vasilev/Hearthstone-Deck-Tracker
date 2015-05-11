@@ -9,7 +9,7 @@
         Title="MainWindow" Width="400" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
         BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1"
         DataContext="{Binding RelativeSource={RelativeSource Self}}" SizeToContent="Height"
-        ContentRendered="MainWindow_OnContentRendered">
+        ContentRendered="MainWindow_OnContentRendered" Closed="MainWindow_OnClosed">
     <controls:MetroWindow.Flyouts>
         <controls:FlyoutsControl Margin="{Binding TitleBarMargin, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
             <controls:Flyout x:Name="FlyoutCollection" Position="Right" Panel.ZIndex="102" Header="Collection"
@@ -55,10 +55,6 @@
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </Style>
                             <Style TargetType="ListViewItem">
-                                <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
-                                <Setter Property="ToolTipService.ShowDuration" Value="60000" />
-                                <Setter Property="ToolTipService.IsEnabled"
-                                    Value="False" />
                                 <Setter Property="Margin" Value="-4,-3,-3,0"/>
                                 <Style.Triggers>
                                     <Trigger Property="IsSelected"
@@ -77,8 +73,9 @@
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="{x:Type GroupItem}">
-                                                    <Expander Header="{Binding Name}" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                                                        <ItemsPresenter></ItemsPresenter>
+                                                    <Expander Header="{Binding Name}" IsExpanded="True"
+                                                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                                        <ItemsPresenter />
                                                     </Expander>
                                                 </ControlTemplate>
                                             </Setter.Value>
@@ -90,11 +87,12 @@
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
-                                    <DTcontrols:Card DataContext="{Binding Card}" Grid.Column="0"/>
-                                    <hearthstoneDeckTracker:OutlinedTextBlock Width="28" Height="25" VerticalAlignment="Center" HorizontalAlignment="Right"
-                                 Text="{Binding AmountNonGolden}" Fill="{Binding Path=Card.ColorPlayer}"
-                                 FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT"
-                                 TextAlignment="Center" FontSize="20" Grid.Column="0" Margin="0, 0, 10, 0" />
+                                    <DTcontrols:Card DataContext="{Binding Card}" Grid.Column="0"></DTcontrols:Card>
+                                    <hearthstoneDeckTracker:OutlinedTextBlock Width="28" Height="25"
+                                         VerticalAlignment="Center" HorizontalAlignment="Right"
+                                         Text="{Binding AmountNonGolden}" Fill="{Binding Path=Card.ColorPlayer}"
+                                         FontFamily="/HearthstoneDeckTracker;component/Resources/#Belwe Bd BT"
+                                         TextAlignment="Center" FontSize="20" Grid.Column="0" Margin="0, 0, 10, 0" />
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -104,10 +102,10 @@
         </controls:FlyoutsControl>
     </controls:MetroWindow.Flyouts>
     <WrapPanel>
-        <ItemsControl x:Name="SetStats" Background="DimGray" Foreground="White" HorizontalAlignment="Left">
+        <ItemsControl x:Name="SetStats" Background="DimGray" Foreground="White" HorizontalAlignment="Left" ItemsSource="{Binding SetsInfo}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <pluginControls:SetSummary DecreaseClicked="SetDecrease" />
+                    <pluginControls:SetSummary ManageSetClicked="EditCollection" />
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
             <ItemsControl.ItemsPanel>

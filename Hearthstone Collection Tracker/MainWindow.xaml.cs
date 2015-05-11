@@ -28,34 +28,22 @@ namespace Hearthstone_Collection_Tracker
     /// </summary>
     public partial class MainWindow
     {
-        private List<Card> _cards;
-
-        protected List<Card> Cards
-        {
-            get
-            {
-                if (_cards == null)
-                {
-                    _cards = Game.GetActualCards();
-                }
-                return _cards;
-            }
-        }
-
         public Thickness TitleBarMargin
         {
             get { return new Thickness(0, TitlebarHeight, 0, 0); }
         }
 
+        public IEnumerable<SetDetailInfoViewModel> SetsInfo { get; set; } 
+
         public MainWindow()
         {
-            InitializeComponent();
-
-            SetStats.ItemsSource = SetCardsManager.Instance.SetCards.Select(gr => new SetDetailInfoViewModel
+            SetsInfo = SetCardsManager.Instance.SetCards.Select(set => new SetDetailInfoViewModel
             {
-                SetName = gr.Key,
-                SetCards = new TrulyObservableCollection<CardInCollection>(gr.Value)
+                SetName = set.SetName,
+                SetCards = new TrulyObservableCollection<CardInCollection>(set.Cards.ToList())
             });
+
+            InitializeComponent();
 
             Filter = new FilterSettings();
             Filter.PropertyChanged += (sender, args) =>
@@ -64,22 +52,7 @@ namespace Hearthstone_Collection_Tracker
             };
         }
 
-        private void CardCollectionEditor_KeyDown(object sender, KeyEventArgs e)
-        {
-        }
-
-        private void CardCollectionEditor_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            var originalSource = (DependencyObject)e.OriginalSource;
-            while ((originalSource != null) && !(originalSource is ListViewItem))
-                originalSource = VisualTreeHelper.GetParent(originalSource);
-
-            if (originalSource != null)
-            {
-            }
-        }
-
-        private void SetDecrease(SetDetailInfoViewModel setInfo)
+        private void EditCollection(SetDetailInfoViewModel setInfo)
         {
             CardCollectionEditor.ItemsSource = setInfo.SetCards;
 
@@ -208,29 +181,17 @@ namespace Hearthstone_Collection_Tracker
             if (Filter.GoldenCards)
             {
                 int newValue = card.AmountGolden + difference;
-                newValue = Clamp(newValue, 0, card.MaxAmountInCollection);
+                newValue = newValue.Clamp(0, card.MaxAmountInCollection);
                 card.AmountGolden = newValue;
             }
             else
             {
                 int newValue = card.AmountNonGolden + difference;
-                newValue = Clamp(newValue, 0, card.MaxAmountInCollection);
+                newValue = newValue.Clamp(0, card.MaxAmountInCollection);
                 card.AmountNonGolden = newValue;
             }
         }
-
-        public static int Clamp(int value, int min, int max)
-        {
-            return (value < min) ? min : (value > max) ? max : value;
-        }
-
-        #endregion
-
-        private void MainWindow_OnContentRendered(object sender, EventArgs e)
-        {
-            this.SizeToContent = SizeToContent.Manual;
-        }
-
+        
         private void CardCollectionEditor_OnKeyDown(object sender, KeyEventArgs e)
         {
             int? amount = null;
@@ -280,6 +241,22 @@ namespace Hearthstone_Collection_Tracker
                     return;
                 UpdateCardsAmount(card, -1);
             }
+        }
+
+        #endregion
+
+        private void MainWindow_OnContentRendered(object sender, EventArgs e)
+        {
+            this.SizeToContent = SizeToContent.Manual;
+        }
+
+        private void MainWindow_OnClosed(object sender, EventArgs e)
+        {
+            SetCardsManager.Instance.SaveCollection(SetsInfo.Select(s => new BasicSetCollectionInfo
+            {
+                SetName = s.SetName,
+                Cards = s.SetCards.ToList()
+            }).ToList());
         }
     }
 

@@ -26,13 +26,13 @@ namespace Hearthstone_Collection_Tracker.Controls
             InitializeComponent();
         }
 
-        public event Action<SetDetailInfoViewModel> DecreaseClicked;
+        public event Action<SetDetailInfoViewModel> ManageSetClicked;
 
         private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
         {
             Button button = sender as Button;
-            if (DecreaseClicked != null)
-                DecreaseClicked(button.DataContext as SetDetailInfoViewModel);
+            if (ManageSetClicked != null)
+                ManageSetClicked(button.DataContext as SetDetailInfoViewModel);
         }
     }
 }

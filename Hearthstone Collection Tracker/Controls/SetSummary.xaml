@@ -56,7 +56,7 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
-            <Button Click="ButtonBase_OnClick">Manage Collection</Button>
+            <Button Click="ButtonBase_OnClick">Manage Set Collection</Button>
         </StackPanel>
     </GroupBox>
 </UserControl>

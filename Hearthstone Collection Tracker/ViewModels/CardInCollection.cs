@@ -8,6 +8,8 @@ namespace Hearthstone_Collection_Tracker.ViewModels
 {
     public class CardInCollection : INotifyPropertyChanged
     {
+        public CardInCollection() { }
+
         public CardInCollection(Card card, int amountNonGolden = 0, int amountGolden = 0)
         {
             Card = card;
@@ -16,7 +18,7 @@ namespace Hearthstone_Collection_Tracker.ViewModels
         }
 
         [XmlIgnore]
-        public Card Card { get; private set; }
+        public Card Card { get; set; }
 
         private int _amountNonGolden;
 
@@ -52,10 +54,16 @@ namespace Hearthstone_Collection_Tracker.ViewModels
             }
         }
 
-        [XmlIgnore]
         public string CardClass
         {
             get { return Card == null ? string.Empty : Card.GetPlayerClass; }
+        }
+
+        private string _cardId;
+        public string CardId
+        {
+            get { return Card == null ? _cardId : Card.Id; }
+            set { _cardId = value; }
         }
 
         #region INotifyPropertyChanged interface
