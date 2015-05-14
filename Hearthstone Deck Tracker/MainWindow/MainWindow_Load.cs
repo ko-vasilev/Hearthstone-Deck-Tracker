@@ -498,6 +498,7 @@ namespace Hearthstone_Deck_Tracker
 			SortFilterDecksFlyout.OperationSwitch.IsChecked = Config.Instance.TagOperation == TagFilerOperation.And;
 
 			SortFilterDecksFlyout.ComboboxDeckSorting.SelectedItem = Config.Instance.SelectedDeckSorting;
+			SortFilterDecksFlyout.CheckBoxSortByClass.IsChecked = Config.Instance.SortDecksByClass;
 
 			if(!EventKeys.Contains(Config.Instance.KeyPressOnGameStart))
 				Config.Instance.KeyPressOnGameStart = "None";
@@ -561,7 +562,7 @@ namespace Hearthstone_Deck_Tracker
 			{
 				await
 					this.ShowMessage("Restart Hearthstone",
-					                 "This is either your first time starting the tracker or the log.config file has been updated. Please restart Heartstone once, for the tracker to work properly.");
+					                 "This is either your first time starting the tracker or the log.config file has been updated. Please restart Hearthstone once, for the tracker to work properly.");
 			}
 
 			if(!Config.Instance.ResolvedOpponentNames)

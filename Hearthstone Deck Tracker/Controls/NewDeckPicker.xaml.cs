@@ -354,12 +354,16 @@ namespace Hearthstone_Deck_Tracker.Controls
 		{
 			var view = (CollectionView)CollectionViewSource.GetDefaultView(ListViewDecks.ItemsSource);
 			view.SortDescriptions.Clear();
-			view.SortDescriptions.Add(new SortDescription("Class", ListSortDirection.Ascending));
+			if(Config.Instance.SortDecksByClass)
+				view.SortDescriptions.Add(new SortDescription("Class", ListSortDirection.Ascending));
 
 			switch(Config.Instance.SelectedDeckSorting)
 			{
 				case "Name":
 					view.SortDescriptions.Add(new SortDescription("DeckName", ListSortDirection.Ascending));
+					break;
+				case "Last Played":
+					view.SortDescriptions.Add(new SortDescription("LastPlayed", ListSortDirection.Descending));
 					break;
 				case "Last Edited":
 					view.SortDescriptions.Add(new SortDescription("LastEdited", ListSortDirection.Descending));
