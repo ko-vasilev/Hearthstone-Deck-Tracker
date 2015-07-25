@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 
 #endregion
@@ -74,7 +75,10 @@ namespace Hearthstone_Deck_Tracker.Plugins
 				_loaded = true;
 				MenuItem = Plugin.MenuItem;
 				if(MenuItem != null)
+				{
 					Helper.MainWindow.MenuItemPlugins.Items.Add(MenuItem);
+					Helper.MainWindow.MenuItemPluginsEmpty.Visibility = Visibility.Collapsed;
+				}
 			}
 			catch(Exception ex)
 			{
@@ -97,9 +101,9 @@ namespace Hearthstone_Deck_Tracker.Plugins
 			}
 			if(sw.ElapsedMilliseconds > PluginManager.MaxPluginExecutionTime)
 			{
-				Logger.WriteLine(string.Format("Updating {0} took {1} ms. Plugin disabled", Name, sw.ElapsedMilliseconds), "PluginWrapper");
+				Logger.WriteLine(string.Format("Warning: Updating {0} took {1} ms.", Name, sw.ElapsedMilliseconds), "PluginWrapper");
 #if(!DEBUG)
-				IsEnabled = false;
+				//IsEnabled = false;
 #endif
 			}
 		}
@@ -125,13 +129,17 @@ namespace Hearthstone_Deck_Tracker.Plugins
 			try
 			{
 				Plugin.OnUnload();
-				_loaded = false;
-				if(MenuItem != null)
-					Helper.MainWindow.MenuItemPlugins.Items.Remove(MenuItem);
 			}
 			catch(Exception ex)
 			{
 				Logger.WriteLine("Error unloading " + Name + ":\n" + ex, "PluginWrapper");
+			}
+			_loaded = false;
+			if(MenuItem != null)
+			{
+				Helper.MainWindow.MenuItemPlugins.Items.Remove(MenuItem);
+				if(Helper.MainWindow.MenuItemPlugins.Items.Count == 1)
+					Helper.MainWindow.MenuItemPluginsEmpty.Visibility = Visibility.Visible;
 			}
 		}
 	}

@@ -26,6 +26,7 @@ namespace Hearthstone_Deck_Tracker
 		private static bool _showedNoteDialog;
 		private bool _doneImportingConstructed;
 		private List<string> _ignoreCachedIds;
+		private DateTime _lastArenaReward = DateTime.MinValue;
 		private int _lastCachedManaCost;
 		private int _lastManaCost;
 		private bool _startImportingCached;
@@ -185,6 +186,7 @@ namespace Hearthstone_Deck_Tracker
 						else if(classDecks.Count == 1)
 						{
 							Helper.MainWindow.DeckPickerList.SelectDeck(classDecks[0]);
+							Helper.MainWindow.DeckPickerList.RefreshDisplayedDecks();
 							Logger.WriteLine("Found deck to switch to: " + classDecks[0].Name, "HandleGameStart");
 						}
 						else if(DeckList.Instance.LastDeckClass.Any(ldc => ldc.Class == Game.PlayingAs))
@@ -208,6 +210,7 @@ namespace Hearthstone_Deck_Tracker
 								Helper.MainWindow.DeckPickerList.SelectDeck(deck);
 								Helper.MainWindow.UpdateDeckList(deck);
 								Helper.MainWindow.UseDeck(deck);
+								Helper.MainWindow.DeckPickerList.RefreshDisplayedDecks();
 							}
 						}
 					}
@@ -354,6 +357,7 @@ namespace Hearthstone_Deck_Tracker
 
 				_lastGame = Game.CurrentGameStats;
 				selectedDeck.DeckStats.AddGameResult(_lastGame);
+				selectedDeck.StatsUpdated();
 				if(Config.Instance.ShowNoteDialogAfterGame && !Config.Instance.NoteDialogDelayed && !_showedNoteDialog)
 				{
 					_showedNoteDialog = true;
@@ -669,7 +673,6 @@ namespace Hearthstone_Deck_Tracker
 			LogEvent("PlayerDeckDiscard", cardId);
 			var correctDeck = Game.PlayerDeckDiscard(cardId);
 
-			//don't think this will ever detect an incorrect deck but who knows...
 			if(!correctDeck && Config.Instance.AutoDeckDetection && !Helper.MainWindow.NeedToIncorrectDeckMessage
 			   && !Helper.MainWindow.IsShowingIncorrectDeckMessage && Game.IsUsingPremade && Game.CurrentGameMode != GameMode.Spectator)
 			{
@@ -678,8 +681,6 @@ namespace Hearthstone_Deck_Tracker
 			}
 			Game.AddPlayToCurrentGame(PlayType.PlayerDeckDiscard, turn, cardId);
 
-			//temp fix for deck not being updated here
-			//todo: figure out why draw is updating but deckdiscard is not
 			Helper.MainWindow.Overlay.ListViewPlayer.Items.Refresh();
 			Helper.MainWindow.PlayerWindow.ListViewPlayer.Items.Refresh();
 			GameEvents.OnPlayerDeckDiscard.Execute(Game.GetCardFromId(cardId));
@@ -714,6 +715,44 @@ namespace Hearthstone_Deck_Tracker
 			LogEvent("OpponentGetToDeck", turn: turn);
 			Game.OpponentGetToDeck(turn);
 			Game.AddPlayToCurrentGame(PlayType.OpponentGetToDeck, turn, string.Empty);
+		}
+
+		public void HandleDustReward(int amount)
+		{
+			if(DeckList.Instance.ActiveDeck != null && DeckList.Instance.ActiveDeck.IsArenaDeck)
+			{
+				if(!DeckList.Instance.ActiveDeck.DustReward.HasValue)
+				{
+					DeckList.Instance.ActiveDeck.DustReward = amount;
+					_lastArenaReward = DateTime.Now;
+				}
+				//All rewards are logged as soon as the run is over.
+				//This makes sure no "old" data is added (in case hdt is restarted after an arena run)
+				else if((DateTime.Now - _lastArenaReward).TotalSeconds < 5)
+				{
+					DeckList.Instance.ActiveDeck.DustReward += amount;
+					_lastArenaReward = DateTime.Now;
+				}
+			}
+		}
+
+		public void HandleGoldReward(int amount)
+		{
+			if(DeckList.Instance.ActiveDeck != null && DeckList.Instance.ActiveDeck.IsArenaDeck)
+			{
+				if(!DeckList.Instance.ActiveDeck.GoldReward.HasValue)
+				{
+					DeckList.Instance.ActiveDeck.GoldReward = amount;
+					_lastArenaReward = DateTime.Now;
+				}
+				//All rewards are logged as soon as the run is over.
+				//This makes sure no "old" data is added (in case hdt is restarted after an arena run)
+				else if((DateTime.Now - _lastArenaReward).TotalSeconds < 5)
+				{
+					DeckList.Instance.ActiveDeck.GoldReward += amount;
+					_lastArenaReward = DateTime.Now;
+				}
+			}
 		}
 
 		public void SetRank(int rank)

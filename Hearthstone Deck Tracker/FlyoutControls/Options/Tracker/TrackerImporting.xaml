@@ -15,6 +15,16 @@
                                               Unchecked="CheckboxTagOnImport_Unchecked" />
                     <CheckBox Name="CheckboxAutoSaveOnImport" Content="Auto save deck on import" Margin="10,5,0,0" Checked="CheckboxAutoSaveOnImport_OnChecked" Unchecked="CheckboxAutoSaveOnImport_OnUnchecked"/>
                     <CheckBox Name="CheckboxImportNetDeck" Content="Auto import via NetDeck" Margin="10,5,0,0" Checked="CheckboxImportNetDeck_OnChecked" Unchecked="CheckboxImportNetDeck_OnUnchecked"/>
+                    <GroupBox Header="Arena deck name template">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Bottom" Margin="0,5,0,0">
+                                <TextBlock Text="Preview:" />
+                                <TextBlock Name="TextBlockNamePreview" Margin="5,0,0,0"/>
+                            </DockPanel>
+                            <Button Name="BtnEditTemplate" Content="EDIT" DockPanel.Dock="Right" Margin="5,0,0,0" Click="BtnEditTemplate_Click"/>
+                            <TextBox Name="TextBoxArenaTemplate" IsEnabled="False" TextChanged="TextBoxArenaTemplate_OnTextChanged"/>
+                        </DockPanel>
+                    </GroupBox>
                     <TextBlock Margin="10,2,0,0">
                                         <Hyperlink NavigateUri="https://chrome.google.com/webstore/detail/netdeck/lpdbiakcpmcppnpchohihcbdnojlgeel"
                                             RequestNavigate="Hyperlink_RequestNavigate">
@@ -24,7 +34,7 @@
                     <Button Margin="10,5,10,0" HorizontalAlignment="Stretch" Content="SHOW ARENA IMPORTING HOW-TO" Click="ButtonArenaHowTo_OnClick"/>
                     <Button Margin="10,5,10,0" HorizontalAlignment="Stretch" Content="SHOW CONSTRUCTED IMPORTING HOW-TO" Click="ButtonConstructedHowTo_OnClick"/>
                     <Button Margin="10,5,10,0" HorizontalAlignment="Stretch" Content="SET UP CONSTRUCTED IMPORTING" Click="ButtonSetUpConstructed_OnClick"/>
-
+                    <Button Margin="10,10,10,0" HorizontalAlignment="Stretch" Content="ACTIVATE HDT PROTOCOL" Click="ButtonActivateHdtProtocol_OnClick"/>
                 </StackPanel>
             </ScrollViewer>
         </GroupBox>

@@ -1,15 +1,21 @@
 ﻿#region
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Media;
+using HDTHelper;
 using Hearthstone_Deck_Tracker.Enums;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.HearthStats.API;
+using Hearthstone_Deck_Tracker.Utility;
 using Hearthstone_Deck_Tracker.Windows;
 using MahApps.Metro;
+using MahApps.Metro.Controls.Dialogs;
 using Microsoft.Win32;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
@@ -316,30 +322,42 @@ namespace Hearthstone_Deck_Tracker
 			//check for log config and create if not existing
 			try
 			{
-				//always overwrite is true by default. 
-				if(!File.Exists(_logConfigPath))
+				var requiredLogs = new[] {"Zone", "Bob", "Power", "Asset", "Rachelle"};
+
+				string[] actualLogs = {};
+				if(File.Exists(_logConfigPath))
 				{
+					using(var sr = new StreamReader(_logConfigPath))
+					{
+						var content = sr.ReadToEnd();
+						actualLogs =
+							content.Split(new[] {'\r', '\n'}, StringSplitOptions.RemoveEmptyEntries)
+							       .Where(x => x.StartsWith("["))
+							       .Select(x => x.Substring(1, x.Length - 2))
+							       .ToArray();
+					}
+				}
+
+				var missing = requiredLogs.Where(x => !actualLogs.Contains(x)).ToList();
+				if(missing.Any())
+				{
+					using(var sw = new StreamWriter(_logConfigPath, true))
+					{
+						foreach(var log in missing)
+						{
+							sw.WriteLine("[{0}]", log);
+							sw.WriteLine("LogLevel=1");
+							sw.WriteLine("FilePrinting=false");
+							sw.WriteLine("ConsolePrinting=true");
+							sw.WriteLine("ScreenPrinting=false");
+							Logger.WriteLine("Added " + log + " to log.config.", "UpdateLogConfig");
+						}
+					}
 					updated = true;
-					File.Copy("Files/log.config", _logConfigPath, true);
-					Logger.WriteLine(string.Format("Copied log.config to {0} (did not exist)", _logConfigPath), "Load");
 				}
-				else
-				{
-					//update log.config if newer
-					var localFile = new FileInfo(_logConfigPath);
-					var file = new FileInfo("Files/log.config");
-					if(file.LastWriteTime > localFile.LastWriteTime)
-					{
-						updated = true;
-						File.Copy("Files/log.config", _logConfigPath, true);
-						Logger.WriteLine(string.Format("Copied log.config to {0} (file newer)", _logConfigPath), "Load");
-					}
-					else if(Config.Instance.AlwaysOverwriteLogConfig)
-					{
-						File.Copy("Files/log.config", _logConfigPath, true);
-						Logger.WriteLine(string.Format("Copied log.config to {0} (AlwaysOverwriteLogConfig)", _logConfigPath), "Load");
-					}
-				}
+				var additional = actualLogs.Where(x => !requiredLogs.Contains(x)).ToList();
+				foreach(var log in additional)
+					Logger.WriteLine("log.config contains additional log: " + log + ".", "UpdateLogConfig");
 			}
 			catch(Exception e)
 			{
@@ -472,6 +490,12 @@ namespace Hearthstone_Deck_Tracker
 				             ? ThemeManager.DetectAppStyle().Item2 : ThemeManager.Accents.First(a => a.Name == Config.Instance.AccentName);
 			ThemeManager.ChangeAppStyle(Application.Current, accent, theme);
 
+
+			
+			Application.Current.Resources["GrayTextColorBrush"] = theme.Name == "BaseLight"
+				                                                           ? new SolidColorBrush((Color)Application.Current.Resources["GrayTextColor1"])
+				                                                           : new SolidColorBrush((Color)Application.Current.Resources["GrayTextColor2"]);
+
 			Options.Load();
 
 
@@ -499,6 +523,8 @@ namespace Hearthstone_Deck_Tracker
 
 			SortFilterDecksFlyout.ComboboxDeckSorting.SelectedItem = Config.Instance.SelectedDeckSorting;
 			SortFilterDecksFlyout.CheckBoxSortByClass.IsChecked = Config.Instance.SortDecksByClass;
+			SortFilterDecksFlyout.ComboboxDeckSortingArena.SelectedItem = Config.Instance.SelectedDeckSortingArena;
+			SortFilterDecksFlyout.CheckBoxSortByClassArena.IsChecked = Config.Instance.SortDecksByClassArena;
 
 			if(!EventKeys.Contains(Config.Instance.KeyPressOnGameStart))
 				Config.Instance.KeyPressOnGameStart = "None";
@@ -542,6 +568,7 @@ namespace Hearthstone_Deck_Tracker
 		{
 			SortFilterDecksFlyout.LoadTags(DeckList.Instance.AllTags);
 			TagControlEdit.LoadTags(DeckList.Instance.AllTags.Where(tag => tag != "All" && tag != "None").ToList());
+			MenuItemQuickSetTag.ItemsSource = TagControlEdit.Tags;
 		}
 
 		private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
@@ -570,10 +597,43 @@ namespace Hearthstone_Deck_Tracker
 			if(!Config.Instance.ResolvedDeckStatsIds)
 			{
 				if(ResolveDeckStatsIds())
-					await Restart();
+					Restart();
 			}
 			if(Config.Instance.HearthStatsSyncOnStart && HearthStatsAPI.IsLoggedIn)
 				HearthStatsManager.SyncAsync(background: true);
+
+			//SetupProtocol(); turn on later
+		}
+
+		internal async Task<bool> SetupProtocol()
+		{
+			if(!HDTProtocol.Verify())
+			{
+				var result =
+					await
+					this.ShowMessageAsync("Enable \"hdt\" protocol?",
+					                      "The \"hdt\" protocol allows other processes and websites to directly communicate with HDT.",
+					                      MessageDialogStyle.AffirmativeAndNegative);
+				if(result == MessageDialogResult.Affirmative)
+				{
+					var procInfo = new ProcessStartInfo("HDTHelper.exe", "registerProtocol");
+					procInfo.Verb = "runas";
+					procInfo.UseShellExecute = true;
+					var proc = Process.Start(procInfo);
+					await Task.Run(() => proc.WaitForExit());
+				}
+			}
+			else
+			{
+				this.ShowMessage("Protocol already active",
+				                 "The \"hdt\" protocol allows other processes and websites to directly communicate with HDT.");
+			}
+			if(HDTProtocol.Verify())
+			{
+				PipeServer.StartAll();
+				return true;
+			}
+			return false;
 		}
 	}
 }

@@ -169,26 +169,6 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Overlay
 			SaveConfig(true);
 		}
 
-		private async void CheckboxAppData_Checked(object sender, RoutedEventArgs e)
-		{
-			if(!_initialized)
-				return;
-			var path = Config.Instance.ConfigPath;
-			Config.Instance.SaveInAppData = true;
-			XmlManager<Config>.Save(path, Config.Instance);
-			await Helper.MainWindow.Restart();
-		}
-
-		private async void CheckboxAppData_Unchecked(object sender, RoutedEventArgs e)
-		{
-			if(!_initialized)
-				return;
-			var path = Config.Instance.ConfigPath;
-			Config.Instance.SaveInAppData = false;
-			XmlManager<Config>.Save(path, Config.Instance);
-			await Helper.MainWindow.Restart();
-		}
-
 		private void CheckboxHideSecrets_Checked(object sender, RoutedEventArgs e)
 		{
 			if(!_initialized)

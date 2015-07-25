@@ -79,6 +79,45 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 			return result;
 		}
 
+		public static async Task<PostResult> UploadMultipleMatchesAsync(IEnumerable<GameStats> games, Deck deck, bool saveFilesAfter = true,
+		                                                                bool background = false)
+		{
+			Logger.WriteLine(string.Format("trying to upload {0} matches for deck {1}", games.Count(), deck.Name), "HearthStatsManager");
+			if(!HearthStatsAPI.IsLoggedIn)
+			{
+				Logger.WriteLine("error: not logged in", "HearthStatsManager");
+				return PostResult.Failed;
+			}
+			List<GameStats> validGames = games.Where(HearthStatsAPI.IsValidGame).ToList();
+			if(!validGames.Any())
+			{
+				Logger.WriteLine("No valid games", "HearthStatsManager");
+				return PostResult.Failed;
+			}
+			if(background)
+				AddBackgroundActivity();
+			if(!deck.HasHearthStatsId)
+			{
+				Logger.WriteLine("...deck has no HearthStats id, uploading deck", "HearthStatsManager");
+				var success = await UploadDeckAsync(deck);
+				if(!success.Success)
+				{
+					Logger.WriteLine("error: deck could not be uploaded or did not return an id. Can not upload match.", "HearthStatsManager");
+					if(background)
+						RemoveBackgroundActivity();
+					return PostResult.Failed;
+				}
+			}
+			var result = await HearthStatsAPI.PostMultipleGameResultsAsync(validGames, deck);
+			if(result.Success && saveFilesAfter)
+				DeckStatsList.Save();
+			if(background)
+				RemoveBackgroundActivity();
+			if(result.Success)
+				Logger.WriteLine("success uploading " + validGames.Count + " matches", "HearthStatsManager");
+			return result;
+		}
+
 		public static async Task<PostResult> UploadArenaMatchAsync(GameStats game, Deck deck, bool saveFilesAfter = false,
 		                                                           bool background = false)
 		{
@@ -155,6 +194,11 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 			return UploadMatchAsync(game, deck, saveFilesAfter).Result;
 		}
 
+		public static PostResult UploadMultipleMatches(IEnumerable<GameStats> games, Deck deck, bool saveFilesAfter = true)
+		{
+			return UploadMultipleMatchesAsync(games, deck, saveFilesAfter).Result;
+		}
+
 		public static async Task<List<Deck>> DownloadDecksAsync(bool forceAll = false)
 		{
 			Logger.WriteLine("trying to download decks", "HearthStatsManager");
@@ -227,8 +271,6 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 
 		public static async Task<PostResult> UploadDeckAsync(Deck deck, bool saveFilesAfter = true, bool background = false)
 		{
-			//await Task.Delay(1000);
-			//return true;
 			Logger.WriteLine("trying to upload deck " + deck, "HearthStatsManager");
 			if(!HearthStatsAPI.IsLoggedIn)
 			{
@@ -244,6 +286,7 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 				first.HearthStatsId = first.HearthStatsIdForUploading;
 				await HearthStatsAPI.DeleteDeckAsync(first);
 				await Task.Delay(1000);
+
 				//reset everything
 				foreach(var version in deck.VersionsIncludingSelf.Select(deck.GetVersion))
 				{
@@ -335,7 +378,6 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 						foreach(var deck in newDecks)
 						{
 							DeckList.Instance.Decks.Add(deck);
-							//Helper.MainWindow.DeckPickerList.AddDeck(deck);
 							Logger.WriteLine("saved new deck " + deck, "HearthStatsManager");
 						}
 						DeckList.Save();
@@ -358,7 +400,7 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 						                                 localDeck =>
 						                                 localDeck.HasHearthStatsId && deck.HearthStatsId == localDeck.HearthStatsId
 						                                 && localDeck.GetMaxVerion() != deck.GetMaxVerion())).ToList();
-					if(decksWithNewVersions.Any()) // TODO: TEST
+					if(decksWithNewVersions.Any())
 					{
 						foreach(var deck in decksWithNewVersions)
 						{
@@ -382,8 +424,6 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 									currentDeck.HearthStatsDeckVersionId = newVersion.HearthStatsDeckVersionId;
 									currentDeck.Versions.Add(clone);
 								}
-								//Helper.MainWindow.DeckPickerList.RemoveDeck(originalDeck);
-								//Helper.MainWindow.DeckPickerList.AddDeck(currentDeck);
 								Logger.WriteLine(
 								                 string.Format("saved {0} new versions ({1}) to {2}", versions.Count,
 								                               versions.Select(v => v.Version.ToString()).Aggregate((c, n) => c + ", " + n), deck),
@@ -453,6 +493,13 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 							                                       d.VersionsIncludingSelf.Select(v => d.GetVersion(v.Major, v.Minor))
 							                                        .Where(v => v != null && v.HasHearthStatsDeckVersionId)
 							                                        .Any(v => game.HearthStatsDeckVersionId == v.HearthStatsDeckVersionId));
+						if(deck == null)
+						{
+							//deck_version_id seems to be null for older matches
+							deck = DeckList.Instance.Decks.FirstOrDefault(d => d.HasHearthStatsId && game.HearthStatsDeckId == d.HearthStatsId);
+							if(deck != null)
+								game.HearthStatsDeckVersionId = deck.HearthStatsDeckVersionId;
+						}
 						if(deck == null)
 						{
 							Logger.WriteLine(string.Format("no deck found for match {0}", game), "HearthStatsManager");
@@ -589,29 +636,33 @@ namespace Hearthstone_Deck_Tracker.HearthStats.API
 					Logger.WriteLine("Uploading " + newMatches.Count + " new matches...", "HearthStatsManager");
 					await Task.Run(() =>
 					{
-						Parallel.ForEach(newMatches, match =>
+						var groupedMatchObs =
+							newMatches.Select(
+							                  match =>
+							                  new
+							                  {
+								                  match.game,
+								                  deckVersion =
+								                  (match.game.HasHearthStatsDeckVersionId
+									                   ? (match.deck.VersionsIncludingSelf.Where(v => v != null)
+									                           .Select(match.deck.GetVersion)
+									                           .FirstOrDefault(
+									                                           d =>
+									                                           d.HasHearthStatsDeckVersionId
+									                                           && d.HearthStatsDeckVersionId == match.game.HearthStatsDeckVersionId)
+									                      ?? match.deck.GetVersion(match.game.PlayerDeckVersion))
+									                   : (match.game.PlayerDeckVersion != null ? match.deck.GetVersion(match.game.PlayerDeckVersion) : match.deck))
+							                  }).GroupBy(x => x.deckVersion.HearthStatsDeckVersionId);
+
+						Parallel.ForEach(groupedMatchObs, matches =>
 						{
-							Deck deck;
-							if(match.game.HasHearthStatsDeckVersionId)
-
-							{
-								var version =
-									match.deck.VersionsIncludingSelf.Where(v => v != null)
-									     .Select(match.deck.GetVersion)
-									     .Where(v => v != null)
-									     .FirstOrDefault(
-									                     d =>
-									                     d.HasHearthStatsDeckVersionId && d.HasHearthStatsDeckVersionId == match.game.HasHearthStatsDeckVersionId);
-								deck = version ?? match.deck.GetVersion(match.game.PlayerDeckVersion);
-							}
-							else if(match.game.PlayerDeckVersion != null)
-								deck = match.deck.GetVersion(match.game.PlayerDeckVersion);
-							else
-								deck = match.deck;
-
-							UploadMatch(match.game, deck, false);
+							UploadMultipleMatches(matches.Select(m => m.game), matches.First().deckVersion, false);
 							if(controller != null)
-								Helper.MainWindow.Dispatcher.BeginInvoke(new Action(() => { controller.SetProgress(1.0 * (++uploaded) / total); }));
+							{
+								Helper.MainWindow.Dispatcher.BeginInvoke(
+								                                         new Action(
+									                                         () => { controller.SetProgress(1.0 * (uploaded += matches.Count()) / total); }));
+							}
 						});
 					});
 					DeckStatsList.Save();

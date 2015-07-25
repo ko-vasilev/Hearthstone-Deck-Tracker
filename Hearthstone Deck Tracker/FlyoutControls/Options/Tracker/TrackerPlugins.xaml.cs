@@ -1,10 +1,13 @@
 ﻿#region
 
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using Hearthstone_Deck_Tracker.Plugins;
+using Hearthstone_Deck_Tracker.Windows;
 
 #endregion
 
@@ -49,6 +52,25 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 		private void ButtonAvailablePlugins_OnClick(object sender, RoutedEventArgs e)
 		{
 			Process.Start(@"https://github.com/Epix37/Hearthstone-Deck-Tracker/wiki/Available-Plugins");
+		}
+
+		private void ButtonOpenPluginsFolder_OnClick(object sender, RoutedEventArgs e)
+		{
+			var pluginDir = Path.Combine(Environment.CurrentDirectory, "Plugins");
+			if(!Directory.Exists(pluginDir))
+			{
+				try
+				{
+					Directory.CreateDirectory(pluginDir);
+				}
+				catch(Exception)
+				{
+					Helper.MainWindow.ShowMessage("Error",
+					                              "Plugins directory not found and can not be created. Please manually create it in the Hearthstone Deck Tracker folder.");
+					return;
+				}
+			}
+            Process.Start(pluginDir);
 		}
 	}
 }

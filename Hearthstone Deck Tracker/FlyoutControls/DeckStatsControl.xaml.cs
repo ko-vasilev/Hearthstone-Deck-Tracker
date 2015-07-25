@@ -15,6 +15,7 @@ using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.HearthStats.API;
 using Hearthstone_Deck_Tracker.Replay;
 using Hearthstone_Deck_Tracker.Stats;
+using Hearthstone_Deck_Tracker.Utility;
 using Hearthstone_Deck_Tracker.Windows;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
@@ -513,7 +514,6 @@ namespace Hearthstone_Deck_Tracker
 
 		private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
 		{
-			//todo: probably not the best performance
 			Refresh();
 		}
 
@@ -865,10 +865,13 @@ namespace Hearthstone_Deck_Tracker
 			if(Config.Instance.HearthStatsAutoUploadNewGames && HearthStatsAPI.IsLoggedIn)
 			{
 				var deck = DeckList.Instance.Decks.FirstOrDefault(d => d.DeckId == game.DeckId);
-				if(game.GameMode == GameMode.Arena)
-					HearthStatsManager.UpdateArenaMatchAsync(game, deck, true, true);
-				else
-					HearthStatsManager.UpdateMatchAsync(game, _deck.GetVersion(game.PlayerDeckVersion), true, true);
+				if(deck != null)
+				{
+					if(game.GameMode == GameMode.Arena)
+						HearthStatsManager.UpdateArenaMatchAsync(game, deck, true, true);
+					else
+						HearthStatsManager.UpdateMatchAsync(game, deck.GetVersion(game.PlayerDeckVersion), true, true);
+				}
 			}
 			DeckStatsList.Save();
 			Helper.MainWindow.DeckPickerList.UpdateDecks();
@@ -918,10 +921,10 @@ namespace Hearthstone_Deck_Tracker
 			{
 				get
 				{
-					if(!Enum.GetNames(typeof(HeroClass)).Contains(_playerHero))
-						return new BitmapImage();
-					var uri = new Uri(string.Format("../Resources/{0}_small.png", _playerHero.ToLower()), UriKind.Relative);
-					return new BitmapImage(uri);
+					HeroClassAll playerHero;
+					if(Enum.TryParse(_playerHero, out playerHero))
+						return ImageCache.GetClassIcon(playerHero);
+					return new BitmapImage();
 				}
 			}
 

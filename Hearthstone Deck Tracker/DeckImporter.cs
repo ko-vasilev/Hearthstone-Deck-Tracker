@@ -52,6 +52,8 @@ namespace Hearthstone_Deck_Tracker
 				return await ImportEliteDecks(url);
 			if(url.Contains("icy-veins"))
 				return await ImportIcyVeins(url);
+			if(url.Contains("hearthbuilder"))
+				return await ImportHearthBuilder(url);
 			Logger.WriteLine("invalid url", "DeckImporter");
 			return null;
 		}
@@ -95,26 +97,53 @@ namespace Hearthstone_Deck_Tracker
 			{
 				var doc = await GetHtmlDoc(url);
 
+				//<div id="leftbar"><div class="headbar"><div style="float:left">ViaGame House Cup #3</div>
+				var tournament = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//div[@id='leftbar']/div[contains(@class, 'headbar')]/div").InnerText);
+
+				// <div class="headbar"><div style="float:left">#5 - Hunter Face -<a href="search.php?q=ThijsNL&filter=current">ThijsNL</a>
+				var deckName = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//div[@id='center']/div[@class='headbar']/div").InnerText.Trim());
+
 				var deck = new Deck();
-				var deckName =
-					HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//*[@id='center']/div[1]/div[1]").InnerText).Split('-')[1].Trim();
+				deck.Name = tournament + " - " + deckName;
 
-				deck.Name = deckName;
+				//<div class="cardname" ... <span class="basic">2 Abusive Sergeant</span>
+				var cards = doc.DocumentNode.SelectNodes("//div[contains(@class, 'cardname')]/span");
 
-
-				var cardNodes = doc.DocumentNode.SelectNodes("//*[@class='cardname']");
-
-				foreach(var cardNode in cardNodes)
+				//<span class="midlarge"><span class="hunter">Hunter</span>-<span class="aggro">Aggro</span></span>
+				var deckInfo = doc.DocumentNode.SelectSingleNode("//div[@id='contentfr']/div[@id='infos']").SelectNodes("//span[contains(@class, 'midlarge')]/span");
+				if (deckInfo.Count == 2)
 				{
-					var text = HttpUtility.HtmlDecode(cardNode.InnerText).Split(' ');
-					var count = int.Parse(text[0].Trim());
-					var name = string.Join(" ", text.Skip(1)).Trim();
+					deck.Class = HttpUtility.HtmlDecode(deckInfo[0].InnerText).Trim();
 
-					var card = Game.GetCardFromName(name);
-					card.Count = count;
-					deck.Cards.Add(card);
-					if(string.IsNullOrEmpty(deck.Class) && card.PlayerClass != "Neutral")
-						deck.Class = card.PlayerClass;
+					var decktype = HttpUtility.HtmlDecode(deckInfo[1].InnerText).Trim();
+					if(!String.IsNullOrEmpty(decktype) && decktype != "None" && Config.Instance.TagDecksOnImport)
+					{
+						if(!DeckList.Instance.AllTags.Contains(decktype))
+						{
+							DeckList.Instance.AllTags.Add(decktype);
+							DeckList.Save();
+							Helper.MainWindow.ReloadTags();
+						}
+						deck.Tags.Add(decktype);
+					}
+				}
+
+				foreach(var cardNode in cards)
+				{
+					var nameString = HttpUtility.HtmlDecode(cardNode.InnerText);
+					var match = Regex.Match(nameString, @"^\s*(\d+)\s+(.*)\s*$");
+
+					if(match.Success)
+					{
+						var count = match.Groups[1].Value;
+						var name = match.Groups[2].Value;
+
+						var card = Game.GetCardFromName(name);
+						card.Count = count.Equals("2") ? 2 : 1;
+						deck.Cards.Add(card);
+						if(string.IsNullOrEmpty(deck.Class) && card.PlayerClass != "Neutral")
+							deck.Class = card.PlayerClass;
+					}
 				}
 
 				return deck;
@@ -131,7 +160,7 @@ namespace Hearthstone_Deck_Tracker
 			try
 			{
 				var doc = await GetHtmlDoc(url);
-				var deck = new Deck {Name = "Arena " + DateTime.Now.ToString("dd-MM HH:mm"), IsArenaDeck = true};
+				var deck = new Deck {Name = Helper.ParseDeckNameTemplate(Config.Instance.ArenaDeckNameTemplate), IsArenaDeck = true};
 
 				var cardNodes = doc.DocumentNode.SelectSingleNode(".//ul[@class='deckList']");
 				var nameNodes = cardNodes.SelectNodes(".//span[@class='name']");
@@ -197,7 +226,7 @@ namespace Hearthstone_Deck_Tracker
 		{
 			try
 			{
-				var deck = new Deck {Name = "Arena " + DateTime.Now.ToString("dd-MM HH:mm"), IsArenaDeck = true};
+				var deck = new Deck {Name = Helper.ParseDeckNameTemplate(Config.Instance.ArenaDeckNameTemplate), IsArenaDeck = true};
 
 				const string baseUrl = @"http://www.arenavalue.com/deckpopout.php?id=";
 				var newUrl = baseUrl + url.Split(new[] {'/'}, StringSplitOptions.RemoveEmptyEntries).Last();
@@ -247,8 +276,6 @@ namespace Hearthstone_Deck_Tracker
 					if(string.IsNullOrEmpty(deck.Class) && card.GetPlayerClass != "Neutral")
 						deck.Class = card.PlayerClass;
 				}
-				if(DeckList.Instance.AllTags.Contains("Arena"))
-					deck.Tags.Add("Arena");
 				return deck;
 			}
 			catch(Exception e)
@@ -413,22 +440,21 @@ namespace Hearthstone_Deck_Tracker
 				var doc = await GetHtmlDoc(url);
 				var deck = new Deck();
 
-				var deckName = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//header/h2[contains(@class,'t-deck-title')]").InnerText);
+                var deckName = HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//section[contains(@class,'deck-info')]/h2[contains(@class,'deck-title')]").InnerText);
 				deck.Name = deckName;
 
 				var cardNameNodes =
 					doc.DocumentNode.SelectNodes("//td[contains(@class,'col-name')]//a[contains(@href,'/cards/') and contains(@class,'rarity')]");
 				var cardCountNodes = doc.DocumentNode.SelectNodes("//td[contains(@class,'col-name')]");
-				//<span class="t-deck-type-label">Midrange</span>
-				var decktype = doc.DocumentNode.SelectSingleNode("//span[contains(@class,'t-deck-type-label')]").InnerText;
+				//<span class="deck-type">Midrange</span>
+				var decktype = doc.DocumentNode.SelectSingleNode("//span[contains(@class,'deck-type')]").InnerText;
 				if(decktype != "None" && Config.Instance.TagDecksOnImport)
 				{
 					if(!DeckList.Instance.AllTags.Contains(decktype))
 					{
 						DeckList.Instance.AllTags.Add(decktype);
 						DeckList.Save();
-						Helper.MainWindow.SortFilterDecksFlyout.LoadTags(DeckList.Instance.AllTags);
-						Helper.MainWindow.TagControlEdit.LoadTags(DeckList.Instance.AllTags.Where(t => t != "All").ToList());
+						Helper.MainWindow.ReloadTags();
 					}
 					deck.Tags.Add(decktype);
 				}
@@ -599,6 +625,45 @@ namespace Hearthstone_Deck_Tracker
 						deck.Class = card.PlayerClass;
 				}
 
+				return deck;
+			}
+			catch(Exception e)
+			{
+				Logger.WriteLine(e.ToString(), "DeckImporter");
+				return null;
+			}
+		}
+
+		private static async Task<Deck> ImportHearthBuilder(string url)
+		{
+			try
+			{
+				var doc = await GetHtmlDoc(url);
+				var deck = new Deck();
+
+				var deckName =
+					HttpUtility.HtmlDecode(doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'single-deck-title-wrap')]/h2").InnerText);
+				deck.Name = deckName;
+
+				var cardNodes = doc.DocumentNode.SelectNodes("//div[@data-card-load]");
+
+				foreach(var cardNode in cardNodes)
+				{
+					var nameString = HttpUtility.HtmlDecode(cardNode.InnerText);
+					var match = Regex.Match(nameString, @"^\s*(.*)\s*(x 2)?\s*$");
+
+					if(match.Success)
+					{
+						var name = match.Groups[1].Value;
+						var count = match.Groups[2].Value;
+
+						var card = Game.GetCardFromName(name);
+						card.Count = String.IsNullOrEmpty(count) ? 1 : 2;
+						deck.Cards.Add(card);
+						if(string.IsNullOrEmpty(deck.Class) && card.PlayerClass != "Neutral")
+							deck.Class = card.PlayerClass;
+					}
+				}
 				return deck;
 			}
 			catch(Exception e)

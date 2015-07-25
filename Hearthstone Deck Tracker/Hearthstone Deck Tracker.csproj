@@ -56,16 +56,7 @@
   <PropertyGroup>
     <ApplicationIcon>Images\HearthstoneDeckTracker.ico</ApplicationIcon>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DeckTracker|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\DeckTracker\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemGroup>
     <Reference Include="Accessibility" />
     <Reference Include="HtmlAgilityPack">
@@ -115,14 +106,27 @@
     <Compile Include="API\ActionList.cs" />
     <Compile Include="API\DeckManagerEvents.cs" />
     <Compile Include="API\GameEvents.cs" />
+    <Compile Include="API\Overlay.cs" />
     <Compile Include="Controls\Card.xaml.cs">
       <DependentUpon>Card.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\DeckPickerClassItem.xaml.cs">
+    <Compile Include="Controls\CardToolTipControl.xaml.cs">
+      <DependentUpon>CardToolTipControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DeckPicker\DeckPickerClassItem.xaml.cs">
       <DependentUpon>DeckPickerClassItem.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\DeckPickerItem.xaml.cs">
-      <DependentUpon>DeckPickerItem.xaml</DependentUpon>
+    <Compile Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayout1.xaml.cs">
+      <DependentUpon>DeckPickerItemLayout1.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayout2.xaml.cs">
+      <DependentUpon>DeckPickerItemLayout2.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayoutLegacy.xaml.cs">
+      <DependentUpon>DeckPickerItemLayoutLegacy.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayoutMinimal.xaml.cs">
+      <DependentUpon>DeckPickerItemLayoutMinimal.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\DeckVersionChange.xaml.cs">
       <DependentUpon>DeckVersionChange.xaml</DependentUpon>
@@ -133,14 +137,25 @@
     <Compile Include="Controls\ElementSorterItem.xaml.cs">
       <DependentUpon>ElementSorterItem.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\DeckPicker\MarginConverter.cs" />
+    <Compile Include="Enums\DeckLayout.cs" />
+    <Compile Include="Enums\IconStyle.cs" />
+    <Compile Include="Errors\ErrorItem.xaml.cs">
+      <DependentUpon>ErrorItem.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Errors\ErrorList.xaml.cs">
+      <DependentUpon>ErrorList.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Errors\Error.cs" />
+    <Compile Include="Errors\ErrorManager.cs" />
     <Compile Include="Controls\ManaCostBarToolTip.xaml.cs">
       <DependentUpon>ManaCostBarToolTip.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\NewDeckPicker.xaml.cs">
-      <DependentUpon>NewDeckPicker.xaml</DependentUpon>
+    <Compile Include="Controls\DeckPicker\DeckPicker.xaml.cs">
+      <DependentUpon>DeckPicker.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\NewDeckPickerItem.xaml.cs">
-      <DependentUpon>NewDeckPickerItem.xaml</DependentUpon>
+    <Compile Include="Controls\DeckPicker\DeckPickerItem.xaml.cs">
+      <DependentUpon>DeckPickerItem.xaml</DependentUpon>
     </Compile>
     <Compile Include="Enums\DeckType.cs" />
     <Compile Include="Enums\DiscardGameDialogResult.cs" />
@@ -164,6 +179,9 @@
     </Compile>
     <Compile Include="FlyoutControls\Options\OptionsMain.xaml.cs">
       <DependentUpon>OptionsMain.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="FlyoutControls\Options\Tracker\TrackerAppearance.xaml.cs">
+      <DependentUpon>TrackerAppearance.xaml</DependentUpon>
     </Compile>
     <Compile Include="FlyoutControls\Options\Tracker\TrackerExporting.xaml.cs">
       <DependentUpon>TrackerExporting.xaml</DependentUpon>
@@ -207,8 +225,16 @@
     <Compile Include="Plugins\PluginSettings.cs" />
     <Compile Include="Plugins\PluginWrapper.cs" />
     <Compile Include="Properties\Annotations.cs" />
+    <Compile Include="Protocol\JsonCard.cs" />
+    <Compile Include="Protocol\JsonDeck.cs" />
+    <Compile Include="Protocol\JsonDecksWrapper.cs" />
     <Compile Include="Replay\TurnViewItem.cs" />
+    <Compile Include="LoginWindow.xaml.cs">
+      <DependentUpon>LoginWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Utility\BackupManager.cs" />
+    <Compile Include="Protocol\PipeServer.cs" />
+    <Compile Include="Utility\ImageCache.cs" />
     <Compile Include="Windows\AddGameDialog.xaml.cs">
       <DependentUpon>AddGameDialog.xaml</DependentUpon>
     </Compile>
@@ -252,9 +278,6 @@
     </Compile>
     <Compile Include="FlyoutControls\DeckNotes.xaml.cs">
       <DependentUpon>DeckNotes.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Controls\DeckPicker.xaml.cs">
-      <DependentUpon>DeckPicker.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\HearthstoneTextBlock.xaml.cs">
       <DependentUpon>HearthstoneTextBlock.xaml</DependentUpon>
@@ -356,15 +379,31 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\CardToolTipControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\DeckListView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\DeckPickerClassItem.xaml">
+    <Page Include="Controls\DeckPicker\DeckPickerClassItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\DeckPickerItem.xaml">
+    <Page Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayout1.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayout2.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayoutLegacy.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\DeckPicker\DeckPickerItemLayouts\DeckPickerItemLayoutMinimal.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -380,15 +419,23 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Errors\ErrorItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Errors\ErrorList.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\ManaCostBarToolTip.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\NewDeckPicker.xaml">
+    <Page Include="Controls\DeckPicker\DeckPicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\NewDeckPickerItem.xaml">
+    <Page Include="Controls\DeckPicker\DeckPickerItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -397,6 +444,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FlyoutControls\Options\OptionsMain.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FlyoutControls\Options\Tracker\TrackerAppearance.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -448,15 +499,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="LoginWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\AddGameDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FlyoutControls\DeckNotes.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\DeckPicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -626,6 +677,9 @@
     </Content>
     <Content Include="Files\cardDB.zhTW.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="HDTHelper.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="HDTUninstaller.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -3018,22 +3072,45 @@
     <Resource Include="Resources\warrior_small.png" />
     <Resource Include="Resources\armor.png" />
     <Resource Include="Resources\jaraxxus_small.png" />
-    <Resource Include="Resources\ClassIcons\druid.png" />
-    <Resource Include="Resources\ClassIcons\hunter.png" />
-    <Resource Include="Resources\ClassIcons\mage.png" />
-    <Resource Include="Resources\ClassIcons\paladin.png" />
-    <Resource Include="Resources\ClassIcons\priest.png" />
-    <Resource Include="Resources\ClassIcons\rogue.png" />
-    <Resource Include="Resources\ClassIcons\shaman.png" />
-    <Resource Include="Resources\ClassIcons\warlock.png" />
-    <Resource Include="Resources\ClassIcons\warrior.png" />
-    <Resource Include="Resources\ClassIcons\all.png" />
-    <Resource Include="Resources\ClassIcons\archived.png" />
+    <Resource Include="Resources\ClassIcons\Square\druid.png" />
+    <Resource Include="Resources\ClassIcons\Square\hunter.png" />
+    <Resource Include="Resources\ClassIcons\Square\mage.png" />
+    <Resource Include="Resources\ClassIcons\Square\paladin.png" />
+    <Resource Include="Resources\ClassIcons\Square\priest.png" />
+    <Resource Include="Resources\ClassIcons\Square\rogue.png" />
+    <Resource Include="Resources\ClassIcons\Square\shaman.png" />
+    <Resource Include="Resources\ClassIcons\Square\warlock.png" />
+    <Resource Include="Resources\ClassIcons\Square\warrior.png" />
     <Resource Include="Resources\archived_marker.png" />
     <Page Include="Resources\ReplayViewIcons.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Resource Include="Resources\ClassIcons\Round\deathknight.png" />
+    <Resource Include="Resources\ClassIcons\Round\druid.png" />
+    <Resource Include="Resources\ClassIcons\Round\hunter.png" />
+    <Resource Include="Resources\ClassIcons\Round\mage.png" />
+    <Resource Include="Resources\ClassIcons\Round\paladin.png" />
+    <Resource Include="Resources\ClassIcons\Round\priest.png" />
+    <Resource Include="Resources\ClassIcons\Round\rogue.png" />
+    <Resource Include="Resources\ClassIcons\Round\shaman.png" />
+    <Resource Include="Resources\ClassIcons\Round\warlock.png" />
+    <Resource Include="Resources\ClassIcons\Round\warrior.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\druid.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\hunter.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\mage.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\paladin.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\priest.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\rogue.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\shaman.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\warlock.png" />
+    <Resource Include="Resources\ClassIcons\HearthStats\warrior.png" />
+    <Resource Include="Resources\ClassIcons\General\BaseDark\archived2.png" />
+    <Resource Include="Resources\ClassIcons\General\BaseLight\archived2.png" />
+    <Resource Include="Resources\ClassIcons\General\BaseDark\all.png" />
+    <Resource Include="Resources\ClassIcons\General\BaseLight\all.png" />
+    <Resource Include="Resources\ClassIcons\General\BaseLight\archived.png" />
+    <Resource Include="Resources\ClassIcons\General\BaseDark\archived.png" />
     <Content Include="Version.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
@@ -3055,7 +3132,9 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
@@ -3074,6 +3153,12 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HDTHelper\HDTHelper.csproj">
+      <Project>{a2a7984f-d059-4259-bcb7-b63828f03c50}</Project>
+      <Name>HDTHelper</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -3089,6 +3174,7 @@
     xcopy /Y "HearthstoneDeckTracker.exe.config" "..\Hearthstone Deck Tracker"
     ren "..\Hearthstone Deck Tracker\HearthstoneDeckTracker.exe" "Hearthstone Deck Tracker.exe"
     ren "..\Hearthstone Deck Tracker\HearthstoneDeckTracker.exe.config" "Hearthstone Deck Tracker.exe.config"
+    xcopy /Y "HDTHelper.exe" "..\Hearthstone Deck Tracker"
     xcopy /Y "HDTUpdate.exe" "..\Hearthstone Deck Tracker"
     xcopy /Y "HDTUninstaller.exe" "..\Hearthstone Deck Tracker"
     xcopy /Y "HtmlAgilityPack.dll" "..\Hearthstone Deck Tracker"

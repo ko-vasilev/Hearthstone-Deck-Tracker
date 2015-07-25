@@ -38,7 +38,7 @@ namespace Hearthstone_Deck_Tracker
 				SetNewDeck(deck, reimport);
 				TagControlEdit.SetSelectedTags(deck.Tags);
 				if(Config.Instance.AutoSaveOnImport)
-					await SaveDeckWithOverwriteCheck();
+					SaveDeckWithOverwriteCheck();
 			}
 			else
 				await this.ShowMessageAsync("Error", "Could not load deck from specified url");
@@ -63,7 +63,8 @@ namespace Hearthstone_Deck_Tracker
 				"heartharena",
 				"hearthstoneheroes",
 				"elitedecks",
-				"icy-veins"
+				"icy-veins",
+				"hearthbuilder"
 			};
 			if(validUrls.Any(clipboard.Contains))
 				settings.DefaultText = clipboard;
@@ -156,7 +157,7 @@ namespace Hearthstone_Deck_Tracker
 				}
 				SetNewDeck(deck);
 				if(Config.Instance.AutoSaveOnImport)
-					await SaveDeckWithOverwriteCheck();
+					SaveDeckWithOverwriteCheck();
 			}
 			catch(Exception ex)
 			{
@@ -164,11 +165,11 @@ namespace Hearthstone_Deck_Tracker
 			}
 		}
 
-		private async void BtnClipboardText_Click(object sender, RoutedEventArgs e)
+		private void BtnClipboardText_Click(object sender, RoutedEventArgs e)
 		{
 			try
 			{
-				if(await CheckClipboardForNetDeckImport())
+				if(CheckClipboardForNetDeckImport())
 				{
 					if(!Config.Instance.NetDeckClipboardCheck.HasValue)
 					{
@@ -185,7 +186,7 @@ namespace Hearthstone_Deck_Tracker
 					{
 						SetNewDeck(deck);
 						if(Config.Instance.AutoSaveOnImport)
-							await SaveDeckWithOverwriteCheck();
+							SaveDeckWithOverwriteCheck();
 					}
 				}
 			}
@@ -247,7 +248,7 @@ namespace Hearthstone_Deck_Tracker
 			}
 		}
 
-		private async void BtnFile_Click(object sender, RoutedEventArgs e)
+		private void BtnFile_Click(object sender, RoutedEventArgs e)
 		{
 			var dialog = new OpenFileDialog {Title = "Select Deck File", DefaultExt = "*.xml;*.txt", Filter = "Deck Files|*.txt;*.xml"};
 			var dialogResult = dialog.ShowDialog();
@@ -272,7 +273,7 @@ namespace Hearthstone_Deck_Tracker
 					}
 					SetNewDeck(deck);
 					if(Config.Instance.AutoSaveOnImport)
-						await SaveDeckWithOverwriteCheck();
+						SaveDeckWithOverwriteCheck();
 				}
 				catch(Exception ex)
 				{
@@ -317,14 +318,13 @@ namespace Hearthstone_Deck_Tracker
 					return;
 			}
 
-			var deck = new Deck {Name = "Arena " + DateTime.Now.ToString("dd-MM HH:mm"), IsArenaDeck = true};
+			var deck = new Deck {Name = Helper.ParseDeckNameTemplate(Config.Instance.ArenaDeckNameTemplate), IsArenaDeck = true};
 			foreach(var card in Game.PossibleArenaCards)
 			{
 				deck.Cards.Add(card);
 				if(deck.Class == null && card.GetPlayerClass != "Neutral")
 					deck.Class = card.GetPlayerClass;
 			}
-			deck.Tags.Add("Arena");
 			SetNewDeck(deck);
 		}
 

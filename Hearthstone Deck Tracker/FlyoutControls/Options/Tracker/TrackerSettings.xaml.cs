@@ -1,5 +1,6 @@
 ﻿#region
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -7,6 +8,9 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
+using System.Windows.Media;
+using Hearthstone_Deck_Tracker.Enums;
+using Hearthstone_Deck_Tracker.Windows;
 using MahApps.Metro;
 using Microsoft.Win32;
 using Application = System.Windows.Application;
@@ -30,24 +34,20 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 
 		public void Load()
 		{
-			ComboboxAccent.ItemsSource = ThemeManager.Accents;
-			ComboboxTheme.ItemsSource = ThemeManager.AppThemes;
-			ComboboxLanguages.ItemsSource = Helper.LanguageDict.Keys;
 			ComboboxKeyPressGameStart.ItemsSource = Helper.MainWindow.EventKeys;
 			ComboboxKeyPressGameEnd.ItemsSource = Helper.MainWindow.EventKeys;
 
 			CheckboxMinimizeTray.IsChecked = Config.Instance.MinimizeToTray;
 			CheckboxStartMinimized.IsChecked = Config.Instance.StartMinimized;
 			CheckboxCheckForUpdates.IsChecked = Config.Instance.CheckForUpdates;
+			CheckboxCheckForBetaUpdates.IsChecked = Config.Instance.CheckForBetaUpdates;
 			CheckboxCloseWithHearthstone.IsChecked = Config.Instance.CloseWithHearthstone;
 			CheckboxConfigSaveAppData.IsChecked = Config.Instance.SaveConfigInAppData;
 			CheckboxDataSaveAppData.IsChecked = Config.Instance.SaveDataInAppData;
 			CheckboxAdvancedWindowSearch.IsChecked = Config.Instance.AdvancedWindowSearch;
 			CheckboxLogTab.IsChecked = Config.Instance.ShowLogTab;
+			CheckBoxShowLoginDialog.IsChecked = Config.Instance.ShowLoginDialog;
 			CheckboxStartWithWindows.IsChecked = Config.Instance.StartWithWindows;
-
-			if(Helper.LanguageDict.Values.Contains(Config.Instance.SelectedLanguage))
-				ComboboxLanguages.SelectedItem = Helper.LanguageDict.First(x => x.Value == Config.Instance.SelectedLanguage).Key;
 
 			if(!Helper.MainWindow.EventKeys.Contains(Config.Instance.KeyPressOnGameStart))
 				Config.Instance.KeyPressOnGameStart = "None";
@@ -56,13 +56,6 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 			if(!Helper.MainWindow.EventKeys.Contains(Config.Instance.KeyPressOnGameEnd))
 				Config.Instance.KeyPressOnGameEnd = "None";
 			ComboboxKeyPressGameEnd.SelectedValue = Config.Instance.KeyPressOnGameEnd;
-
-			var theme = string.IsNullOrEmpty(Config.Instance.ThemeName)
-				            ? ThemeManager.DetectAppStyle().Item1 : ThemeManager.AppThemes.First(t => t.Name == Config.Instance.ThemeName);
-			var accent = string.IsNullOrEmpty(Config.Instance.AccentName)
-				             ? ThemeManager.DetectAppStyle().Item2 : ThemeManager.Accents.First(a => a.Name == Config.Instance.AccentName);
-			ComboboxTheme.SelectedItem = theme;
-			ComboboxAccent.SelectedItem = accent;
 
 			_initialized = true;
 		}
@@ -90,54 +83,7 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 			SaveConfig(false);
 		}
 
-		private void ComboboxAccent_SelectionChanged(object sender, SelectionChangedEventArgs e)
-		{
-			if(!_initialized)
-				return;
-			var accent = ComboboxAccent.SelectedItem as Accent;
-			if(accent != null)
-			{
-				ThemeManager.ChangeAppStyle(Application.Current, accent, ThemeManager.DetectAppStyle().Item1);
-				Config.Instance.AccentName = accent.Name;
-				SaveConfig(false);
-			}
-		}
-
-		private void ComboboxTheme_SelectionChanged(object sender, SelectionChangedEventArgs e)
-		{
-			if(!_initialized)
-				return;
-			var theme = ComboboxTheme.SelectedItem as AppTheme;
-			if(theme != null)
-			{
-				ThemeManager.ChangeAppStyle(Application.Current, ThemeManager.DetectAppStyle().Item2, theme);
-				Config.Instance.ThemeName = theme.Name;
-				//if(ComboboxWindowBackground.SelectedItem.ToString() != "Default")
-				Helper.OptionsMain.OptionsOverlayDeckWindows.UpdateAdditionalWindowsBackground();
-				SaveConfig(false);
-			}
-		}
-
-		private async void ComboboxLanguages_SelectionChanged(object sender, SelectionChangedEventArgs e)
-		{
-			if(!_initialized)
-				return;
-			var language = ComboboxLanguages.SelectedValue.ToString();
-			if(!Helper.LanguageDict.ContainsKey(language))
-				return;
-
-			var selectedLanguage = Helper.LanguageDict[language];
-
-			if(!File.Exists(string.Format("Files/cardDB.{0}.xml", selectedLanguage)))
-				return;
-
-			Config.Instance.SelectedLanguage = selectedLanguage;
-			Config.Save();
-
-
-			await Helper.MainWindow.Restart();
-		}
-
+		
 		private void ComboboxKeyPressGameStart_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			if(!_initialized)
@@ -209,7 +155,8 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 			var path = Config.Instance.ConfigPath;
 			Config.Instance.SaveConfigInAppData = true;
 			XmlManager<Config>.Save(path, Config.Instance);
-			await Helper.MainWindow.Restart();
+			await Helper.MainWindow.ShowMessage("Restart required.", "Click ok to restart HDT");
+			Helper.MainWindow.Restart();
 		}
 
 		private async void CheckboxConfigSaveAppData_Unchecked(object sender, RoutedEventArgs e)
@@ -219,7 +166,8 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 			var path = Config.Instance.ConfigPath;
 			Config.Instance.SaveConfigInAppData = false;
 			XmlManager<Config>.Save(path, Config.Instance);
-			await Helper.MainWindow.Restart();
+			await Helper.MainWindow.ShowMessage("Restart required.", "Click ok to restart HDT");
+			Helper.MainWindow.Restart();
 		}
 
 		private async void CheckboxDataSaveAppData_Checked(object sender, RoutedEventArgs e)
@@ -228,7 +176,8 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 				return;
 			Config.Instance.SaveDataInAppData = true;
 			Config.Save();
-			await Helper.MainWindow.Restart();
+			await Helper.MainWindow.ShowMessage("Restart required.", "Click ok to restart HDT");
+			Helper.MainWindow.Restart();
 		}
 
 		private async void CheckboxDataSaveAppData_Unchecked(object sender, RoutedEventArgs e)
@@ -237,7 +186,8 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 				return;
 			Config.Instance.SaveDataInAppData = false;
 			Config.Save();
-			await Helper.MainWindow.Restart();
+			await Helper.MainWindow.ShowMessage("Restart required.", "Click ok to restart HDT");
+			Helper.MainWindow.Restart();
 		}
 
 		private void CheckboxAdvancedWindowSearch_Checked(object sender, RoutedEventArgs e)
@@ -276,21 +226,20 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 			Config.Save();
 		}
 
-		private async void ButtonGamePath_OnClick(object sender, RoutedEventArgs e)
+		private void ButtonGamePath_OnClick(object sender, RoutedEventArgs e)
 		{
-			var dialog = new OpenFileDialog
+			var dialog = new FolderBrowserDialog()
 			{
-				Title = "Select Hearthstone.exe",
-				DefaultExt = "Hearthstone.exe",
-				Filter = "Hearthstone.exe|Hearthstone.exe"
+				Description = "Select your Hearthstone Directory",
+				ShowNewFolderButton = false
 			};
 			var dialogResult = dialog.ShowDialog();
 
 			if(dialogResult == DialogResult.OK)
 			{
-				Config.Instance.HearthstoneDirectory = Path.GetDirectoryName(dialog.FileName);
+				Config.Instance.HearthstoneDirectory = dialog.SelectedPath;
 				Config.Save();
-				await Helper.MainWindow.Restart();
+				Helper.MainWindow.ShowMessage("Restart required.", "Please restart HDT for this setting to take effect.");
 			}
 		}
 
@@ -317,7 +266,10 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 				Config.Instance.DataDirPath = dialog.SelectedPath;
 				Config.Save();
 				if(!saveInAppData)
-					await Helper.MainWindow.Restart();
+				{
+					await Helper.MainWindow.ShowMessage("Restart required.", "Click ok to restart HDT");
+					Helper.MainWindow.Restart();
+				}
 			}
 		}
 
@@ -347,5 +299,43 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 			Config.Instance.StartWithWindows = false;
 			Config.Save();
 		}
+
+		private void CheckboxCheckForBetaUpdates_Checked(object sender, RoutedEventArgs e)
+		{
+			if(!_initialized)
+				return;
+			Config.Instance.CheckForBetaUpdates = true;
+			Config.Save();
+		}
+
+		private void CheckboxCheckForBetaUpdates_Unchecked(object sender, RoutedEventArgs e)
+		{
+			if(!_initialized)
+				return;
+			Config.Instance.CheckForBetaUpdates = false;
+			Config.Save();
+		}
+
+		private void CheckboxShowLoginDialog_Checked(object sender, RoutedEventArgs e)
+		{
+			if(!_initialized)
+				return;
+			Config.Instance.ShowLoginDialog = true;
+			Config.Save();
+		}
+
+		private void CheckboxShowLoginDialog_Unchecked(object sender, RoutedEventArgs e)
+		{
+			if(!_initialized)
+				return;
+			Config.Instance.ShowLoginDialog = false;
+			Config.Save();
+		}
+
+		private void ButtonRestart_OnClick(object sender, RoutedEventArgs e)
+		{
+			Helper.MainWindow.Restart();
+		}
+
 	}
 }

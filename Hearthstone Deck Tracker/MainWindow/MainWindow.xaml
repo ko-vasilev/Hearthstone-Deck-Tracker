@@ -7,9 +7,11 @@
                       xmlns:controls1="clr-namespace:Hearthstone_Deck_Tracker.Controls"
                       xmlns:hearthStats="clr-namespace:Hearthstone_Deck_Tracker.HearthStats.Controls"
                       xmlns:flyoutControls="clr-namespace:Hearthstone_Deck_Tracker.FlyoutControls"
-                      Title="Hearthstone Deck Tracker" Height="603" Width="640"
-                      MinHeight="584" MinWidth="640"
-                      Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" Closing="Window_Closing"
+                      xmlns:error="clr-namespace:Hearthstone_Deck_Tracker.Controls.Error"
+                      xmlns:deckPicker="clr-namespace:Hearthstone_Deck_Tracker.Controls.DeckPicker"
+                      Title="Hearthstone Deck Tracker" Height="603" Width="700"
+                      MinHeight="584" MinWidth="700"
+                      Closing="Window_Closing"
                       Icon="..\Images\HearthstoneDeckTracker.ico"
                       StateChanged="MetroWindow_StateChanged" Loaded="MetroWindow_Loaded"
                       BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1" LocationChanged="MetroWindow_LocationChanged" SizeChanged="MetroWindow_SizeChanged">
@@ -20,9 +22,28 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
+    <controls:MetroWindow.IconTemplate>
+        <DataTemplate>
+            <Rectangle Margin="2" Opacity="0.7">
+                <Rectangle.Fill>
+                    <VisualBrush Visual="{StaticResource hdticon}" />
+                </Rectangle.Fill>
+            </Rectangle>
+        </DataTemplate>
+    </controls:MetroWindow.IconTemplate>
     <controls:MetroWindow.RightWindowCommands>
         <controls:WindowCommands>
             <controls:ProgressRing Name="ProgressRingTitleBar" Foreground="White" Width="16" Height="16" ToolTip="syncing with HearthStats..."/>
+            <Button Click="BtnErrors_OnClick" Visibility="{Binding ErrorIconVisibility, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
+                <StackPanel Orientation="Horizontal">
+                    <Rectangle Width="16" Height="16">
+                        <Rectangle.Fill>
+                            <VisualBrush Visual="{StaticResource appbar_warning_circle}" />
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <TextBlock Margin="4" VerticalAlignment="Center" Text="{Binding ErrorCount, RelativeSource={RelativeSource AncestorType=local:MainWindow}}" />
+                </StackPanel>
+            </Button>
             <Button Click="BtnOptions_OnClick">
                 <StackPanel Orientation="Horizontal">
                     <Rectangle Width="16" Height="16">
@@ -87,7 +108,7 @@
                          Height="auto" Panel.ZIndex="100">
                 <local:SortFilterDecks Width="auto" Height="auto" x:Name="TagControlEdit" />
             </controls:Flyout>
-            <controls:Flyout x:Name="FlyoutHearthStatsLogin" Position="Top" Panel.ZIndex="1" Margin="0,50,0,0">
+            <controls:Flyout x:Name="FlyoutHearthStatsLogin" Position="Top" Panel.ZIndex="1" Margin="0,50,0,0" CloseButtonVisibility="Collapsed">
                 <hearthStats:LoginControl x:Name="HearthstatsLoginControl" Margin="0,32,0,32"/>
             </controls:Flyout>
             <controls:Flyout x:Name="FlyoutHearthStatsDownload" Header="Download decks" Position="Left" CloseButtonVisibility="Collapsed" Panel.ZIndex="1" Width="{Binding Width, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
@@ -95,6 +116,9 @@
             </controls:Flyout>
             <controls:Flyout x:Name="FlyoutHearthStatsUpload" Header="Upload decks" Position="Left" CloseButtonVisibility="Collapsed" Panel.ZIndex="1" Width="{Binding Width, RelativeSource={RelativeSource AncestorType=local:MainWindow}}">
                 <hearthStats:UploadDecksControl x:Name="HearthStatsUploadDecksControl"/>
+            </controls:Flyout>
+            <controls:Flyout x:Name="FlyoutErrors" Position="Top" Header="Errors">
+                <error:ErrorList DataContext="{Binding Errors, RelativeSource={RelativeSource AncestorType=local:MainWindow}}" VerticalAlignment="Center" MaxHeight="400"/>
             </controls:Flyout>
         </controls:FlyoutsControl>
     </controls:MetroWindow.Flyouts>
@@ -112,7 +136,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Menu Grid.Row="1" Grid.ColumnSpan="3">
-                <MenuItem Header="_TRACKER">
+                <MenuItem Header="_MAIN">
                     <MenuItem.Icon>
                         <Rectangle Width="16" Height="16" Margin="0,0,-10,0">
                             <Rectangle.Fill>
@@ -152,47 +176,47 @@
                     </MenuItem.Icon>
                     <MenuItem Header="_DRUID" Click="BtnNewDeckDruid_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/druid_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/druid.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_HUNTER" Click="BtnNewDeckHunter_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/hunter_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/hunter.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_MAGE" Click="BtnNewDeckMage_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/mage_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/mage.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_PRIEST" Click="BtnNewDeckPriest_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/priest_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/priest.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_PALADIN" Click="BtnNewDeckPaladin_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/paladin_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/paladin.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_ROGUE" Click="BtnNewDeckRogue_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/rogue_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/rogue.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_SHAMAN" Click="BtnNewDeckShaman_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/shaman_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/shaman.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_WARLOCK" Click="BtnNewDeckWarlock_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/warlock_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/warlock.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="_WARRIOR" Click="BtnNewDeckWarrior_Click">
                         <MenuItem.Icon>
-                            <Image Source="../Resources/warrior_small.png" Width="24" Height="24" Margin="3,0,0,0" />
+                            <Image Source="../Resources/ClassIcons/Round/warrior.png" Width="24" Height="24" Margin="3,0,0,0" RenderOptions.BitmapScalingMode="Fant" />
                         </MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
@@ -221,6 +245,7 @@
                     <MenuItem Name="MenuItemMissingCards" Header="SHOW _MISSING CARDS" ToolTip="this information is based on your last export" Click="MenuItemMissingDust_OnClick"/>
                     <MenuItem Name="MenuItemUpdateDeck" Header="_UPDATE (WEB)" Click="BtnUpdateDeck_Click" />
                     <MenuItem Name="MenuItemOpenUrl" Header="OPEN _WEBSITE" Click="BtnOpenDeckUrl_Click" />
+                    <MenuItem Name="MenuItemOpenHearthStats" Header="OPEN _HEARTHSTATS" Click="BtnOpenHearthStats_Click" />
                     <Separator />
                     <MenuItem Header="_ARCHIVE" Name="MenuItemArchive" Click="BtnArchiveDeck_Click" />
                     <MenuItem Header="UN_ARCHIVE" Name="MenuItemUnarchive" Click="BtnUnarchiveDeck_Click" />
@@ -261,7 +286,7 @@
                     <MenuItem Name="MenuItemExportNames" Header="COPY _NAMES TO CLIPBOARD" Click="BtnClipboardNames_OnClick" />
                     <MenuItem Name="MenuItemExportScreenshot" Header="_SCREENSHOT" Click="BtnScreenhot_Click" />
                 </MenuItem>
-                <MenuItem Header="_STATS"  Click="BtnDeckStats_Click">
+                <MenuItem Header="_STATS">
                     <MenuItem.Icon>
                         <Rectangle Width="16" Height="16" Margin="0,0,-10,0">
                             <Rectangle.Fill>
@@ -269,18 +294,35 @@
                             </Rectangle.Fill>
                         </Rectangle>
                     </MenuItem.Icon>
+                    <MenuItem Header="GAMES &amp; _STATISTICS"  Click="BtnDeckStats_Click"/>
+                    <Separator/>
+                    <MenuItem Header="_LATEST REPLAY" Click="MenuItemReplayLastGame_OnClick"/>
+                    <MenuItem Header="_SELECT REPLAY" Click="MenuItemReplaySelectGame_OnClick" />
+                    <MenuItem Header="LOAD REPLAY FROM _FILE" Click="MenuItemReplayFromFile_OnClick"/>
                 </MenuItem>
-                <MenuItem Header="_REPLAYS">
+                <MenuItem Header="_HEARTHSTATS">
                     <MenuItem.Icon>
                         <Rectangle Width="16" Height="16" Margin="0,0,-10,0">
                             <Rectangle.Fill>
-                                <VisualBrush Visual="{StaticResource appbar_control_resume}" />
+                                <VisualBrush Visual="{StaticResource hearthstats}" />
                             </Rectangle.Fill>
                         </Rectangle>
                     </MenuItem.Icon>
-                    <MenuItem Header="_LAST GAME" Click="MenuItemReplayLastGame_OnClick"/>
-                    <MenuItem Header="_SELECT GAME" Click="MenuItemReplaySelectGame_OnClick" />
-                    <MenuItem Header="LOAD _FILE" Click="MenuItemReplayFromFile_OnClick"/>
+                    <MenuItem Name="MenuItemLogin" Header="LOGIN" Click="MenuItemLogin_OnClick"/>
+                    <MenuItem Name="MenuItemDashboard" Header="DASHBOARD (WEB)" Click="MenuItemDashboard_OnClick"/>
+                    <MenuItem Name="MenuItemHearthStatsSync"  Header="SYNC NOW" Click="MenuItemHearthStatsSync_OnClick"/>
+                    <MenuItem Name="MenuItemHearthStatsForceFullSync"  Header="FORCE FULL SYNC" Click="MenuItemHearthStatsForceFullSync_OnClick"/>
+                    <Separator/>
+                    <CheckBox Name="MenuItemCheckBoxSyncOnStart" Content="SYNC ON START" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxSyncOnStart_OnChecked" Unchecked="MenuItemCheckBoxSyncOnStart_OnUnchecked"/>
+                    <CheckBox Name="MenuItemCheckBoxAutoUploadDecks" Content="AUTO UPLOAD NEW DECKS" ToolTip="also applies to changes made to decks and new versions" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoUploadDecks_OnChecked" Unchecked="MenuItemCheckBoxAutoUploadDecks_OnUnchecked"/>
+                    <CheckBox Name="MenuItemCheckBoxAutoUploadGames" Content="AUTO UPLOAD GAMES" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoUploadGames_OnChecked" Unchecked="MenuItemCheckBoxAutoUploadGames_OnUnchecked"/>
+                    <CheckBox Name="MenuItemCheckBoxAutoDeleteDecks" Content="AUTO DELETE DECKS" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoDeleteDecks_OnChecked" Unchecked="MenuItemCheckBoxAutoDeleteDecks_OnUnchecked"/>
+                    <CheckBox Name="MenuItemCheckBoxAutoDeleteGames" Content="AUTO DELETE GAMES" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoDeleteGames_OnChecked" Unchecked="MenuItemCheckBoxAutoDeleteGames_OnUnchecked"/>
+                    <CheckBox Name="MenuItemCheckBoxAutoSyncBackground" Content="AUTO SYNC IN BACKGROUND*" ToolTip="Will perform 'SYNC NOW' every 5 minutes in the background. Unless you are running HDT on multiple PCs at the same time there you don't really need this." Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoSyncBackground_OnChecked" Unchecked="MenuItemCheckBoxAutoSyncBackground_OnUnchecked"/>
+                    <Separator/>
+                    <MenuItem Name="MenuItemDeleteHearthStatsDeck" Header="DELETE SELECTED DECKS" ToolTip="This will try to delete the selected decks and all matches on HearthStats as well as remove all stored IDs. The local decks will stay untouched!" Click="MenuItemDeleteHearthStatsDeck_OnClick"/>
+                    <Separator Name="SeparatorLogout" Visibility="Collapsed"/>
+                    <MenuItem Name="MenuItemLogout" Header="LOGOUT" Click="MenuItemLogout_OnClick" Visibility="Collapsed"/>
                 </MenuItem>
                 <!--<MenuItem Header="MENUITEM">
                 </MenuItem>-->
@@ -292,30 +334,7 @@
                             </Rectangle.Fill>
                         </Rectangle>
                     </MenuItem.Icon>
-                    <MenuItem Header="_HEARTHSTATS">
-                        <MenuItem.Icon>
-                            <Rectangle Width="16" Height="16" Margin="0,0,-10,0">
-                                <Rectangle.Fill>
-                                    <VisualBrush Visual="{StaticResource hearthstats}" />
-                                </Rectangle.Fill>
-                            </Rectangle>
-                        </MenuItem.Icon>
-                        <MenuItem Name="MenuItemLogin" Header="LOGIN" Click="MenuItemLogin_OnClick"/>
-                        <MenuItem Name="MenuItemDashboard" Header="DASHBOARD (WEB)" Click="MenuItemDashboard_OnClick"/>
-                        <MenuItem Name="MenuItemHearthStatsSync"  Header="SYNC NOW" Click="MenuItemHearthStatsSync_OnClick"/>
-                        <MenuItem Name="MenuItemHearthStatsForceFullSync"  Header="FORCE FULL SYNC" Click="MenuItemHearthStatsForceFullSync_OnClick"/>
-                        <Separator/>
-                        <CheckBox Name="MenuItemCheckBoxSyncOnStart" Content="SYNC ON START" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxSyncOnStart_OnChecked" Unchecked="MenuItemCheckBoxSyncOnStart_OnUnchecked"/>
-                        <CheckBox Name="MenuItemCheckBoxAutoUploadDecks" Content="AUTO UPLOAD NEW DECKS" ToolTip="also applies to changes made to decks and new versions" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoUploadDecks_OnChecked" Unchecked="MenuItemCheckBoxAutoUploadDecks_OnUnchecked"/>
-                        <CheckBox Name="MenuItemCheckBoxAutoUploadGames" Content="AUTO UPLOAD GAMES" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoUploadGames_OnChecked" Unchecked="MenuItemCheckBoxAutoUploadGames_OnUnchecked"/>
-                        <CheckBox Name="MenuItemCheckBoxAutoDeleteDecks" Content="AUTO DELETE DECKS" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoDeleteDecks_OnChecked" Unchecked="MenuItemCheckBoxAutoDeleteDecks_OnUnchecked"/>
-                        <CheckBox Name="MenuItemCheckBoxAutoDeleteGames" Content="AUTO DELETE GAMES" Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoDeleteGames_OnChecked" Unchecked="MenuItemCheckBoxAutoDeleteGames_OnUnchecked"/>
-                        <CheckBox Name="MenuItemCheckBoxAutoSyncBackground" Content="AUTO SYNC IN BACKGROUND*" ToolTip="Will perform 'SYNC NOW' every 5 minutes in the background. Unless you are running HDT on multiple PCs at the same time there you don't really need this." Margin="-24,0,0,0" FontSize="14" Checked="MenuItemCheckBoxAutoSyncBackground_OnChecked" Unchecked="MenuItemCheckBoxAutoSyncBackground_OnUnchecked"/>
-                        <Separator/>
-                    <MenuItem Name="MenuItemDeleteHearthStatsDeck" Header="DELETE SELECTED DECKS" ToolTip="This will try to delete the selected decks and all matches on HearthStats as well as remove all stored IDs. The local decks will stay untouched!" Click="MenuItemDeleteHearthStatsDeck_OnClick"/>
-                        <Separator Name="SeparatorLogout" Visibility="Collapsed"/>
-                        <MenuItem Name="MenuItemLogout" Header="LOGOUT" Click="MenuItemLogout_OnClick" Visibility="Collapsed"/>
-                    </MenuItem>
+                    <MenuItem Header="EMPTY..." IsEnabled="False" Name="MenuItemPluginsEmpty"/>
                 </MenuItem>
             </Menu>
             <Separator Grid.Row="1" Grid.ColumnSpan="4" Margin="0,29,0,0" Panel.ZIndex="2" />
@@ -325,31 +344,37 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Border Name="PanelVersionComboBox" BorderThickness="1" BorderBrush="{DynamicResource TextBrush}" Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkBrushKey}}" Margin="10,6,10,-4" Grid.Row="0" Visibility="Collapsed">
+                <Border Name="PanelVersionComboBox" BorderThickness="1" BorderBrush="{DynamicResource TextBrush}" Margin="10,6,10,-4" Grid.Row="0" Visibility="Collapsed">
                     <DockPanel>
                         <TextBlock Text="SELECTED VERSION:" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" Margin="5,0,0,0"/>
                         <ComboBox Name="ComboBoxDeckVersion" SelectionChanged="ComboBoxDeckVersion_OnSelectionChanged" Margin="5,0,0,0">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding ShortVersionString}"/>
+                                    <TextBlock Text="{Binding ShortVersionString}" FontWeight="SemiBold"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </DockPanel>
                 </Border>
-                <Border Name="PanelCardCount" Height="28" BorderThickness="1" BorderBrush="{DynamicResource TextBrush}" Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkBrushKey}}" Margin="10,6,10,-4" Grid.Row="0"  Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="CARDS:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14" Margin="5,0,0,0"/>
-                        <TextBlock Name="TextBlockCardCount" VerticalAlignment="Center" Text="0 / 30" FontWeight="SemiBold" FontSize="14" Margin="5,0,0,0"/>
-                        <Rectangle Name="CardCountWarning" Width="16" Height="16" Visibility="Collapsed" Margin="3,0,0,0">
-                            <Rectangle.Fill>
-                                <VisualBrush Visual="{StaticResource appbar_warning}" />
-                            </Rectangle.Fill>
-                        </Rectangle>
-                    </StackPanel>
+                <Border Name="PanelCardCount" Height="28" BorderThickness="1" BorderBrush="{DynamicResource TextBrush}" Margin="10,6,10,-4" Grid.Row="0"  Visibility="Collapsed">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Margin="0,0,2,0" Orientation="Horizontal">
+                            <TextBlock Name="TextBlockIconNaxx" Text="Naxx" TextAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="10" Margin="2,0" ToolTip="Deck contains cards from the Curse of Naxxramas expansion."/>
+                            <TextBlock Name="TextBlockIconGvg" Text="GvG" TextAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="10" Margin="2,0" ToolTip="Deck contains cards from the Goblins vs Gnomes expansion."/>
+                            <TextBlock Name="TextBlockIconBrm" Text="BRM" TextAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="10" Margin="2,0" ToolTip="Deck contains cards from the Blackrock Mountain expansion."/>
+                        </StackPanel>
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" >
+                            <TextBlock Text="CARDS:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14" Margin="5,0,0,0"/>
+                            <TextBlock Name="TextBlockCardCount" VerticalAlignment="Center" Text="0 / 30" FontWeight="SemiBold" FontSize="14" Margin="5,0,0,0"/>
+                            <Rectangle Name="CardCountWarning" DockPanel.Dock="Left"  Width="16" Height="16" Visibility="Collapsed" Margin="3,0,0,0">
+                                <Rectangle.Fill>
+                                    <VisualBrush Visual="{StaticResource appbar_warning}" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                        </StackPanel>
+                    </DockPanel>
                 </Border>
-                <ListView x:Name="ListViewDeck" Grid.Row="1"
-                                    Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkBrushKey}}"
+                <ListView x:Name="ListViewDeck" Grid.Row="1" Background="#696969"
                                     Foreground="White" FontWeight="Bold" BorderThickness="1"
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                     ScrollViewer.VerticalScrollBarVisibility="Visible"
@@ -391,7 +416,7 @@
                 </ListView>
                 <local:ManaCurve x:Name="ManaCurveMyDecks" Grid.Row="2" Height="150" Margin="0,0,0,6" />
             </Grid>
-                <controls1:NewDeckPicker x:Name="DeckPickerList" HorizontalAlignment="Stretch" Margin="6,6,0,6" Grid.Column="0"
+                <deckPicker:DeckPicker x:Name="DeckPickerList" HorizontalAlignment="Stretch" Margin="6,6,0,6" Grid.Column="0"
                               Grid.Row="2"
                               Height="auto" Width="auto"
                               OnSelectedDeckChanged="DeckPickerList_OnSelectedDeckChanged"
@@ -475,28 +500,31 @@
                 </Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,6,0,0" Grid.Row="0"
                             Width="235" Grid.ColumnSpan="2">
-                    <TextBox controls:TextBoxHelper.Watermark="Deckname" x:Name="TextBoxDeckName" Width="107"
-                             VerticalContentAlignment="Center" HorizontalAlignment="Left" Height="26"
-                             TextWrapping="NoWrap" Text="" VerticalAlignment="Top"
-                             TextChanged="TextBoxDeckName_TextChanged" DockPanel.Dock="Left" />
+                    <Border Width="107"
+            BorderThickness="1" DockPanel.Dock="Top" BorderBrush="{DynamicResource TextBrush}">
+                        <TextBox controls:TextBoxHelper.Watermark="Name..." TextWrapping="NoWrap"
+                             TextChanged="TextBoxDeckName_TextChanged" Name="TextBoxDeckName" 
+                     controls:TextBoxHelper.IsWaitingForData="True"/>
+                    </Border>
 
                     <Rectangle Name="DeckNameExistsWarning" Width="16" Height="16" ToolTip="Name already exists" Visibility="Collapsed" Margin="3,0,0,0">
                         <Rectangle.Fill>
                             <VisualBrush Visual="{StaticResource appbar_warning}" />
                         </Rectangle.Fill>
                     </Rectangle>
-                    <TextBox controls:TextBoxHelper.Watermark="Search..." x:Name="TextBoxDBFilter"
-                             VerticalContentAlignment="Center" HorizontalAlignment="Left" Height="26"
-                             Margin="3,0,0,0" TextWrapping="NoWrap" Text="" VerticalAlignment="Top"
-                             TextChanged="TextBoxDBFilter_TextChanged"
+                    <Border Width="125"
+            BorderThickness="1" DockPanel.Dock="Top" Margin="3,0,0,0" BorderBrush="{DynamicResource TextBrush}">
+                        <TextBox  controls:TextBoxHelper.Watermark="Search..." x:Name="TextBoxDBFilter"
+                             TextChanged="TextBoxDBFilter_TextChanged" TextWrapping="NoWrap" 
                              PreviewKeyDown="TextBoxDBFilter_PreviewKeyDown"
-                             DockPanel.Dock="Left" Width="125" />
+                     controls:TextBoxHelper.IsWaitingForData="True" />
+                    </Border>
                 </StackPanel>
-                <ListView x:Name="ListViewDB" Background="DimGray" Foreground="White"
+                <ListView x:Name="ListViewDB" Foreground="White" Background="#696969"
                                     FontWeight="Bold" BorderThickness="1"
                                     ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                    ScrollViewer.CanContentScroll="True" FontFamily="Arial" Margin="0,6,0,6"
+                                    ScrollViewer.CanContentScroll="True" FontFamily="Arial" Margin="0,2,0,6"
                                     HorizontalAlignment="Left"
                                     Width="235" KeyDown="ListViewDB_KeyDown"
                                     MouseLeftButtonUp="ListViewDB_MouseLeftButtonUp" Grid.Row="1" Grid.Column="0">
@@ -533,14 +561,15 @@
                     </ListView.ItemTemplate>
                 </ListView>
                 <DockPanel Name="PanelDeckHistory" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
-                    <DockPanel Margin="0,6,0,0" DockPanel.Dock="Top" Height="26">
-                        <TextBlock x:Name="DeckCurrentVersionHeader" Text="DECK HISTORY:" VerticalAlignment="Center" FontSize="12" DockPanel.Dock="Left"/>
-                        <TextBlock x:Name="DeckCurrentVersion" Margin="6,0,0,0" FontSize="12" Text="v1.0" VerticalAlignment="Center"/>
-                    </DockPanel>
-                    <ScrollViewer Margin="0,6,6,6" Background="{DynamicResource {x:Static SystemColors.ControlDarkDarkBrushKey}}" BorderThickness="1">
+                    <Border Height="28" BorderThickness="1" BorderBrush="{DynamicResource TextBrush}" Margin="0,6,6,-4" DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="DeckCurrentVersionHeader" Text="DECK HISTORY:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14" Margin="5,0,0,0"/>
+                            <TextBlock x:Name="DeckCurrentVersion" Text="v1.0" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14" Margin="5,0,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer Margin="0,6,6,6" BorderThickness="1" Background="#696969">
                         <StackPanel x:Name="DeckHistoryPanel" 
                                     Orientation="Vertical"
-                                    
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                     ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     ScrollViewer.CanContentScroll="True"
