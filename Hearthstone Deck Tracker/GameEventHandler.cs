@@ -39,6 +39,7 @@ namespace Hearthstone_Deck_Tracker
 				return Game.CurrentGameMode == GameMode.None && Config.Instance.RecordOther
 				       || Game.CurrentGameMode == GameMode.Practice && Config.Instance.RecordPractice
 				       || Game.CurrentGameMode == GameMode.Arena && Config.Instance.RecordArena
+				       || Game.CurrentGameMode == GameMode.Brawl && Config.Instance.RecordBrawl
 				       || Game.CurrentGameMode == GameMode.Ranked && Config.Instance.RecordRanked
 				       || Game.CurrentGameMode == GameMode.Friendly && Config.Instance.RecordFriendly
 				       || Game.CurrentGameMode == GameMode.Casual && Config.Instance.RecordCasual
@@ -384,6 +385,8 @@ namespace Hearthstone_Deck_Tracker
 					await GameModeSaved(15);
 					if(Game.CurrentGameMode == GameMode.Arena)
 						HearthStatsManager.UploadArenaMatchAsync(_lastGame, selectedDeck, background: true);
+					if(Game.CurrentGameMode == GameMode.Brawl)
+						{ /* do nothing */ }
 					else
 						HearthStatsManager.UploadMatchAsync(_lastGame, selectedDeck, background: true);
 				}
@@ -773,7 +776,7 @@ namespace Hearthstone_Deck_Tracker
 		{
 			LogEvent("OpponentPlay", cardId, turn, from);
 			Game.OpponentPlay(cardId, from, turn);
-			Helper.MainWindow.Overlay.ListViewPlayer.Items.Refresh();
+			Helper.MainWindow.Overlay.ListViewOpponent.Items.Refresh();
 			Helper.MainWindow.OpponentWindow.ListViewOpponent.Items.Refresh();
 			Game.AddPlayToCurrentGame(PlayType.OpponentPlay, turn, cardId);
 			GameEvents.OnOpponentPlay.Execute(Game.GetCardFromId(cardId));
@@ -790,7 +793,7 @@ namespace Hearthstone_Deck_Tracker
 			{
 				Logger.WriteLine(ex.ToString(), "OpponentHandDiscard");
 			}
-			Helper.MainWindow.Overlay.ListViewPlayer.Items.Refresh();
+			Helper.MainWindow.Overlay.ListViewOpponent.Items.Refresh();
 			Helper.MainWindow.OpponentWindow.ListViewOpponent.Items.Refresh();
 			Game.AddPlayToCurrentGame(PlayType.OpponentHandDiscard, turn, cardId);
 			GameEvents.OnOpponentHandDiscard.Execute(Game.GetCardFromId(cardId));
@@ -842,7 +845,7 @@ namespace Hearthstone_Deck_Tracker
 		{
 			LogEvent("OpponentBackToHand", cardId, turn);
 			Game.OpponentBackToHand(cardId, turn, id);
-			Helper.MainWindow.Overlay.ListViewPlayer.Items.Refresh();
+			Helper.MainWindow.Overlay.ListViewOpponent.Items.Refresh();
 			Helper.MainWindow.OpponentWindow.ListViewOpponent.Items.Refresh();
 			Game.AddPlayToCurrentGame(PlayType.OpponentBackToHand, turn, cardId);
 			GameEvents.OnOpponentPlayToHand.Execute(Game.GetCardFromId(cardId));

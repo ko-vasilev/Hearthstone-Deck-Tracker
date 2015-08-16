@@ -406,11 +406,11 @@ namespace Hearthstone_Deck_Tracker
 		[DefaultValue(false)]
 		public bool OwnsGoldenStalagg = false;
 
-		[DefaultValue(new[] {"Win Rate", "Cards", "Draw Chances", "Card Counter", "Fatigue Counter"})]
-		public string[] PanelOrderOpponent = {"Win Rate", "Cards", "Draw Chances", "Card Counter", "Fatigue Counter"};
+		[DefaultValue(new[] {"Win Rate", "Cards", "Card Counter", "Draw Chances", "Fatigue Counter" })]
+		public string[] PanelOrderOpponent = {"Win Rate", "Cards", "Card Counter", "Draw Chances", "Fatigue Counter" };
 
-		[DefaultValue(new[] {"Deck Title", "Wins", "Cards", "Draw Chances", "Card Counter", "Fatigue Counter"})]
-		public string[] PanelOrderPlayer = {"Deck Title", "Wins", "Cards", "Draw Chances", "Card Counter", "Fatigue Counter"};
+		[DefaultValue(new[] {"Deck Title", "Wins", "Cards", "Card Counter", "Draw Chances", "Fatigue Counter" })]
+		public string[] PanelOrderPlayer = {"Deck Title", "Wins", "Cards", "Card Counter", "Draw Chances", "Fatigue Counter" };
 
 		[DefaultValue(65)]
 		public double PlayerDeckHeight = 65;
@@ -453,6 +453,9 @@ namespace Hearthstone_Deck_Tracker
 
 		[DefaultValue(false)]
 		public bool RecordOther = false;
+
+		[DefaultValue(false)]
+		public bool RecordBrawl = false;
 
 		[DefaultValue(false)]
 		public bool RecordPractice = false;
@@ -590,6 +593,9 @@ namespace Hearthstone_Deck_Tracker
 
 		[DefaultValue(true)]
 		public bool ShowExportingDialog = true;
+
+		[DefaultValue("c7b1c7904951f7a")]
+		public string ImgurClientId = "c7b1c7904951f7a";
 
 		[DefaultValue(false)]
 		public bool ShowInTaskbar = false;

@@ -240,15 +240,12 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 
 		public static OpponentSecrets OpponentSecrets { get; set; }
 
-		private static readonly List<string> ValidCardSets = new List<string>
+		private static readonly List<string> InValidCardSets = new List<string>
 		{
-			"Basic",
-			"Reward",
-			"Classic",
-			"Promotion",
-			"Curse of Naxxramas",
-			"Goblins vs Gnomes",
-			"Blackrock Mountain"
+			"Credits",
+			"Missions",
+			"Debug",
+			"System"
 		};
 
 		public static List<Card> DrawnLastGame { get; set; }
@@ -784,7 +781,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			try
 			{
 				var db = XmlManager<CardDb>.Load(string.Format("Files/cardDB.{0}.xml", "enUS"));
-				_cardDb = db.Cards.Where(x => ValidCardSets.Any(set => x.CardSet == set)).ToDictionary(x => x.CardId, x => x.ToCard());
+				_cardDb = db.Cards.Where(x => InValidCardSets.All(set => x.CardSet != set)).ToDictionary(x => x.CardId, x => x.ToCard());
 				if(languageTag != "enUS")
 				{
 					var localized = XmlManager<CardDb>.Load(string.Format("Files/cardDB.{0}.xml", languageTag));
@@ -794,6 +791,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 						if(_cardDb.TryGetValue(card.CardId, out c))
 						{
 							c.LocalizedName = card.Name;
+							c.EnglishText = c.Text;
 							c.Text = card.Text;
 						}
 					}
@@ -814,7 +812,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			if(_cardDb.TryGetValue(cardId, out card))
 				return (Card)card.Clone();
 			Logger.WriteLine("Could not find entry in db for cardId: " + cardId, "Game");
-			return new Card(cardId, null, "UNKNOWN", "Minion", "UNKNOWN", 0, "UNKNOWN", 0, 1, "", 0, 0, "UNKNOWN", null, 0, "", "");
+			return new Card(cardId, null, "UNKNOWN", "Minion", "UNKNOWN", 0, "UNKNOWN", 0, 1, "", "", 0, 0, "UNKNOWN", null, 0, "", "");
 		}
 
 		public static Card GetCardFromName(string name, bool localized = false)
@@ -827,7 +825,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 
 			//not sure with all the values here
 			Logger.WriteLine("Could not get card from name: " + name, "Game");
-			return new Card("UNKNOWN", null, "UNKNOWN", "Minion", name, 0, name, 0, 1, "", 0, 0, "UNKNOWN", null, 0, "", "");
+			return new Card("UNKNOWN", null, "UNKNOWN", "Minion", name, 0, name, 0, 1, "", "", 0, 0, "UNKNOWN", null, 0, "", "");
 		}
 
 		public static List<Card> GetActualCards()
