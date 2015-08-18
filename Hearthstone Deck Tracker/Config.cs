@@ -54,7 +54,10 @@ namespace Hearthstone_Deck_Tracker
 		[DefaultValue(false)]
 		public bool AutoSaveOnImport = false;
 
-        [DefaultValue(true)]
+		[DefaultValue(false)]
+		public bool AutoUseDeck = false;
+
+		[DefaultValue(true)]
         public bool DeckPickerCaps = true;
 
 		[DefaultValue(true)]
@@ -111,6 +114,9 @@ namespace Hearthstone_Deck_Tracker
 
 		[DefaultValue(DeckLayout.Layout1)]
 		public DeckLayout DeckPickerItemLayout = DeckLayout.Layout1;
+
+		[DefaultValue(false)]
+		public bool DeckImportAutoDetectCardCount = false;
 
 		[DefaultValue(false)]
 		public bool DiscardGameIfIncorrectDeck = false;
@@ -199,8 +205,8 @@ namespace Hearthstone_Deck_Tracker
 		[DefaultValue(true)]
 		public bool ExportSetDeckName = true;
 
-		[DefaultValue(0)]
-		public int ExportStartDelay = 0;
+		[DefaultValue(1)]
+		public int ExportStartDelay = 1;
 
 		[DefaultValue(false)]
 		public bool ExtraFeatures = false;
