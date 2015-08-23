@@ -24,7 +24,8 @@ namespace Hearthstone_Deck_Tracker
 			Wheel = 0x00000800
 		}
 
-		private const int WsExTransparent = 0x00000020;
+		public const int WsExTransparent = 0x00000020;
+		public const int WsExToolWindow = 0x00000080;
 		private const int GwlExstyle = (-20);
 		public const int SwRestore = 9;
 		private static DateTime _lastCheck;
@@ -66,10 +67,10 @@ namespace Hearthstone_Deck_Tracker
 		[DllImport("user32.dll")]
 		private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
-		public static void SetWindowExTransparent(IntPtr hwnd)
+		public static void SetWindowExStyle(IntPtr hwnd, int style)
 		{
 			var extendedStyle = GetWindowLong(hwnd, GwlExstyle);
-			SetWindowLong(hwnd, GwlExstyle, extendedStyle | WsExTransparent);
+			SetWindowLong(hwnd, GwlExstyle, extendedStyle | style);
 		}
 
 		public static bool IsHearthstoneInForeground()
@@ -90,7 +91,7 @@ namespace Hearthstone_Deck_Tracker
 
 		public static IntPtr GetHearthstoneWindow()
 		{
-			if(!Game.IsRunning && DateTime.Now - _lastCheck < new TimeSpan(0, 0, 5) && _hsWindow == IntPtr.Zero)
+			if(DateTime.Now - _lastCheck < new TimeSpan(0, 0, 5) && _hsWindow == IntPtr.Zero)
 				return _hsWindow;
 			if(_hsWindow != IntPtr.Zero && IsWindow(_hsWindow))
 				return _hsWindow;

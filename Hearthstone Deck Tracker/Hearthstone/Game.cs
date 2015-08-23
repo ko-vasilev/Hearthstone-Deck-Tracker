@@ -11,11 +11,13 @@ using Hearthstone_Deck_Tracker.Enums.Hearthstone;
 using Hearthstone_Deck_Tracker.Hearthstone.Entities;
 using Hearthstone_Deck_Tracker.Replay;
 using Hearthstone_Deck_Tracker.Stats;
+using MahApps.Metro.Controls.Dialogs;
 
 #endregion
 
 namespace Hearthstone_Deck_Tracker.Hearthstone
 {
+    [Obsolete("Use GameV2")]
 	public static class Game
 	{
 		static Game()
@@ -165,12 +167,14 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			CurrentGameStats.AddPlay(play, turn, cardId);
 		}
 
+		// TODO: possibly refactor with GetActualCards, reduce duplication
 		public static bool IsActualCard(Card card)
 		{
 			if(card == null)
 				return false;
 			return (card.Type == "Minion" || card.Type == "Spell" || card.Type == "Weapon")
-			       && Helper.IsNumeric(card.Id.ElementAt(card.Id.Length - 1)) && Helper.IsNumeric(card.Id.ElementAt(card.Id.Length - 2))
+			       && (Helper.IsNumeric(card.Id.ElementAt(card.Id.Length - 1)) || card.Id == "AT_063t")
+			       && Helper.IsNumeric(card.Id.ElementAt(card.Id.Length - 2))
 			       && !CardIds.InvalidCardIds.Any(id => card.Id.Contains(id));
 		}
 
@@ -539,6 +543,15 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			}
 		}
 
+		public static void OpponentJoustReveal(string cardId)
+		{
+			if(string.IsNullOrEmpty(cardId) || OpponentCards.Any(c => c.Id == cardId && c.Jousted))
+				return;
+			var card = GetCardFromId(cardId);
+			card.Jousted = true;
+			OpponentCards.Add(card);
+		}
+
 		public static void OpponentPlay(string id, int from, int turn)
 		{
 			OpponentHandCount--;
@@ -547,6 +560,9 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 				OpponentHasCoin = false;
 			if(!string.IsNullOrEmpty(id))
 			{
+				var jousted = OpponentCards.FirstOrDefault(c => c.Id == id && c.Jousted);
+				if(jousted != null)
+					OpponentCards.Remove(jousted);
 				//key: cardid, value: turn when returned to deck
 				var wasReturnedToDeck = OpponentReturnedToDeck.Any(p => p.Key == id && p.Value <= OpponentHandAge[from - 1]);
 				var stolen = from != -1
@@ -648,6 +664,10 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			OpponentDeckCount--;
 			if(string.IsNullOrEmpty(cardId))
 				return;
+
+			var jousted = OpponentCards.FirstOrDefault(c => c.Id == cardId && c.Jousted);
+			if(jousted != null)
+				OpponentCards.Remove(jousted);
 
 			var card = OpponentCards.FirstOrDefault(c => c.Id == cardId && c.WasDiscarded);
 			if(card != null)
@@ -832,7 +852,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 		{
 			return (from card in _cardDb.Values
 			        where card.Type == "Minion" || card.Type == "Spell" || card.Type == "Weapon"
-			        where Helper.IsNumeric(card.Id.ElementAt(card.Id.Length - 1))
+			        where Helper.IsNumeric(card.Id.ElementAt(card.Id.Length - 1)) || card.Id == "AT_063t"
 			        where Helper.IsNumeric(card.Id.ElementAt(card.Id.Length - 2))
 			        where !CardIds.InvalidCardIds.Any(id => card.Id.Contains(id))
 			        select card).ToList();
@@ -853,5 +873,80 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 		}
 
 		#endregion
+
+		public static Deck TempArenaDeck;
+		public static readonly List<Deck> DiscardedArenaDecks = new List<Deck>();
+
+		public static void NewArenaDeck(string heroId)
+		{
+			TempArenaDeck = new Deck
+			{
+				Name = Helper.ParseDeckNameTemplate(Config.Instance.ArenaDeckNameTemplate),
+				IsArenaDeck = true,
+				Class = GetHeroNameFromId(heroId)
+			};
+			Logger.WriteLine("Created new arena deck: " + TempArenaDeck.Class);
+		}
+
+		public static async void NewArenaCard(string cardId)
+		{
+			if(TempArenaDeck == null)
+				return;
+			var existingCard = TempArenaDeck.Cards.FirstOrDefault(c => c.Id == cardId);
+			if(existingCard != null)
+				existingCard.Count++;
+			else
+				TempArenaDeck.Cards.Add((Card)GetCardFromId(cardId).Clone());
+			var numCards = TempArenaDeck.Cards.Sum(c => c.Count);
+			Logger.WriteLine(string.Format("Added new card to arena deck: {0} ({1}/30)", cardId, numCards));
+			if(numCards == 30)
+			{
+				Logger.WriteLine("Found complete arena deck!");
+				if(!Config.Instance.SelectedArenaImportingBehaviour.HasValue)
+				{
+					Logger.WriteLine("...but we are using the old importing method.");
+					return;
+				}
+				var recentArenaDecks = DeckList.Instance.Decks.Where(d => d.IsArenaDeck).OrderByDescending(d => d.LastPlayedNewFirst).Take(15);
+				if(recentArenaDecks.Any(d => d.Cards.All(c => TempArenaDeck.Cards.Any(c2 => c.Id == c2.Id && c.Count == c2.Count))))
+				{
+					Logger.WriteLine("...but we already have that one. Discarding.");
+					TempArenaDeck = null;
+					return;
+				}
+				if(DiscardedArenaDecks.Any(d => d.Cards.All(c => TempArenaDeck.Cards.Any(c2 => c.Id == c2.Id && c.Count == c2.Count))))
+				{
+					Logger.WriteLine("...but it was already discarded by the user. No automatic action taken.");
+					return;
+				}
+				if(Config.Instance.SelectedArenaImportingBehaviour.Value == ArenaImportingBehaviour.AutoImportSave)
+				{
+					Logger.WriteLine("...auto saving new arena deck.");
+					Helper.MainWindow.SetNewDeck(TempArenaDeck);
+					Helper.MainWindow.SaveDeck(false, TempArenaDeck.Version);
+					TempArenaDeck = null;
+				}
+				else if(Config.Instance.SelectedArenaImportingBehaviour.Value == ArenaImportingBehaviour.AutoAsk)
+				{
+					var result =
+						await
+						Helper.MainWindow.ShowMessageAsync("New arena deck detected!", "You can change this behaviour to \"auto save&import\" or \"manual\" in [options > tracker > importing]", MessageDialogStyle.AffirmativeAndNegative,
+						                                   new MetroDialogSettings {AffirmativeButtonText = "import", NegativeButtonText = "cancel"});
+					if(result == MessageDialogResult.Affirmative)
+					{
+						Logger.WriteLine("...saving new arena deck.");
+						Helper.MainWindow.SetNewDeck(TempArenaDeck);
+						Helper.MainWindow.ActivateWindow();
+						TempArenaDeck = null;
+					}
+					else
+					{
+						Logger.WriteLine("...discarded by user.");
+						DiscardedArenaDecks.Add(TempArenaDeck);
+						TempArenaDeck = null;
+					}
+				}
+			}
+		}
 	}
 }

@@ -25,6 +25,7 @@ using Hearthstone_Deck_Tracker.Controls.Error;
 using Hearthstone_Deck_Tracker.Enums;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.HearthStats.API;
+using Hearthstone_Deck_Tracker.LogReader;
 using Hearthstone_Deck_Tracker.Plugins;
 using Hearthstone_Deck_Tracker.Replay;
 using Hearthstone_Deck_Tracker.Stats;
@@ -47,20 +48,21 @@ namespace Hearthstone_Deck_Tracker
 	/// </summary>
 	public partial class MainWindow : INotifyPropertyChanged
 	{
-		public event PropertyChangedEventHandler PropertyChanged;
+	    private readonly GameV2 _game;
+	    public event PropertyChangedEventHandler PropertyChanged;
 
 		public void UseDeck(Deck selected)
 		{
-			Game.Reset();
+			_game.Reset();
 
 			if(selected != null)
 			{
 				DeckList.Instance.ActiveDeck = selected;
-				Game.SetPremadeDeck((Deck)selected.Clone());
+				_game.SetPremadeDeck((Deck)selected.Clone());
 				UpdateMenuItemVisibility();
 			}
 			//needs to be true for automatic deck detection to work
-			HsLogReader.Instance.Reset(true);
+			HsLogReaderV2.Instance.Reset(true);
 			Overlay.Update(false);
 			Overlay.SortViews();
 		}
@@ -427,6 +429,22 @@ namespace Hearthstone_Deck_Tracker
 			MinHeight -= StatusBarNewsHeight;
 			TopRow.Height = new GridLength(0);
 		}
+		
+		private void BtnNewsPrevious_OnClick(object sender, RoutedEventArgs e)
+		{
+			_newsLine--;
+			if(_newsLine < 0)
+				_newsLine = _news.Length - 1;
+			UpdateNews(_newsLine);
+		}
+
+		private void BtnNewsNext_OnClick(object sender, RoutedEventArgs e)
+		{
+			_newsLine++;
+			if(_newsLine > _news.Length - 1)
+				_newsLine = 0;
+			UpdateNews(_newsLine);
+		}
 
 		private async void MenuItemHearthStatsForceFullSync_OnClick(object sender, RoutedEventArgs e)
 		{
@@ -657,10 +675,9 @@ namespace Hearthstone_Deck_Tracker
 
 		#region Constructor
 
-		public MainWindow()
+		public MainWindow(GameV2 game)
 		{
-			// Set working directory to path of executable
-			Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
+		    _game = game;
 
 			InitializeComponent();
 			Trace.Listeners.Add(new TextBoxTraceListener(Options.OptionsTrackerLogging.TextBoxLog));
@@ -696,7 +713,7 @@ namespace Hearthstone_Deck_Tracker
 			}
 
 
-			HsLogReader.Create();
+			HsLogReaderV2.Create();
 
 			var configVersion = string.IsNullOrEmpty(Config.Instance.CreatedByVersion) ? null : new Version(Config.Instance.CreatedByVersion);
 
@@ -723,7 +740,7 @@ namespace Hearthstone_Deck_Tracker
 				_updatedLogConfig = UpdateLogConfigFile();
 
 			//hearthstone, loads db etc - needs to be loaded before playerdecks, since cards are only saved as ids now
-			Game.Reset();
+			_game.Reset();
 
 			if(!Directory.Exists(Config.Instance.DataDir))
 				Config.Instance.Reset("DataDirPath");
@@ -773,10 +790,10 @@ namespace Hearthstone_Deck_Tracker
 			};
 
 			//create overlay
-			Overlay = new OverlayWindow {Topmost = true};
+			Overlay = new OverlayWindow(_game) {Topmost = true};
 
-			PlayerWindow = new PlayerWindow(Config.Instance, Game.IsUsingPremade ? Game.PlayerDeck : Game.PlayerDrawn);
-			OpponentWindow = new OpponentWindow(Config.Instance, Game.OpponentCards);
+			PlayerWindow = new PlayerWindow(_game,Config.Instance, _game.IsUsingPremade ? _game.PlayerDeck : _game.PlayerDrawn);
+			OpponentWindow = new OpponentWindow(_game, Config.Instance, _game.OpponentCards);
 			TimerWindow = new TimerWindow(Config.Instance);
 			StatsWindow = new StatsWindow();
 
@@ -822,7 +839,7 @@ namespace Hearthstone_Deck_Tracker
 			SelectDeck(DeckList.Instance.ActiveDeck, true);
 
 			if(_foundHsDirectory)
-				HsLogReader.Instance.Start();
+				HsLogReaderV2.Instance.Start(_game);
 
 			Helper.SortCardCollection(ListViewDeck.Items, Config.Instance.CardSortingClassFirst);
 			DeckPickerList.PropertyChanged += DeckPickerList_PropertyChanged;
@@ -1046,6 +1063,7 @@ namespace Hearthstone_Deck_Tracker
 				_currentNewsLine = _news[newsLine];
 				NewsContentControl.Content = StringToTextBlock(_currentNewsLine);
 			}
+			StatusBarItemNewsIndex.Content = string.Format("({0}/{1})", _newsLine + 1, _news.Length);
 			_lastNewsUpdate = DateTime.Now;
 		}
 
@@ -1211,7 +1229,7 @@ namespace Hearthstone_Deck_Tracker
 
 				_notifyIcon.Visible = false;
 				Overlay.Close();
-				HsLogReader.Instance.Stop();
+				HsLogReaderV2.Instance.Stop();
 				TimerWindow.Shutdown();
 				PlayerWindow.Shutdown();
 				OpponentWindow.Shutdown();
@@ -1255,7 +1273,7 @@ namespace Hearthstone_Deck_Tracker
 
 		public async void ShowIncorrectDeckMessage()
 		{
-			if(Game.PlayerDrawn.Count == 0)
+			if(_game.PlayerDrawn.Count == 0)
 			{
 				IsShowingIncorrectDeckMessage = false;
 				return;
@@ -1264,11 +1282,11 @@ namespace Hearthstone_Deck_Tracker
 			//wait for player hero to be detected
 			for(var i = 0; i < 50; i++)
 			{
-				if(Game.PlayingAs != null)
+				if(_game.PlayingAs != null)
 					break;
 				await Task.Delay(100);
 			}
-			if(Game.PlayingAs == null)
+			if(_game.PlayingAs == null)
 			{
 				IsShowingIncorrectDeckMessage = false;
 				return;
@@ -1277,15 +1295,15 @@ namespace Hearthstone_Deck_Tracker
 			var decks =
 				DeckList.Instance.Decks.Where(
 				                              d =>
-				                              d.Class == Game.PlayingAs && !d.Archived
-				                              && Game.PlayerDrawn.Where(c => !c.IsStolen).All(c => d.GetSelectedDeckVersion().Cards.Contains(c)))
+				                              d.Class == _game.PlayingAs && !d.Archived
+				                              && _game.PlayerDrawn.Where(c => !c.IsStolen).All(c => d.GetSelectedDeckVersion().Cards.Contains(c)))
 				        .ToList();
 
 			if(decks.Contains(DeckList.Instance.ActiveDeckVersion))
 				decks.Remove(DeckList.Instance.ActiveDeckVersion);
 
 			Logger.WriteLine(decks.Count + " possible decks found.", "IncorrectDeckMessage");
-			Game.NoMatchingDeck = decks.Count == 0;
+			_game.NoMatchingDeck = decks.Count == 0;
 			if(decks.Count == 1 && Config.Instance.AutoSelectDetectedDeck)
 			{
 				var deck = decks.First();
@@ -1341,25 +1359,27 @@ namespace Hearthstone_Deck_Tracker
 			var hsForegroundChanged = false;
 			while(_doUpdate)
 			{
+
 				if(User32.GetHearthstoneWindow() != IntPtr.Zero)
 				{
-					if(!Game.IsRunning || Game.CurrentRegion == Region.UNKNOWN)
+					if(_game.CurrentRegion == Region.UNKNOWN)
 					{
 						//game started
-						HsLogReader.Instance.GetCurrentRegion();
+						HsLogReaderV2.Instance.GetCurrentRegion();
+						HsLogReaderV2.Instance.LoadLatestLogFile();
 					}
 					Overlay.UpdatePosition();
 
 					if(!_tempUpdateCheckDisabled && Config.Instance.CheckForUpdates)
 					{
-						if(!Game.IsRunning && (DateTime.Now - _lastUpdateCheck) > new TimeSpan(0, 10, 0) && !_showingUpdateMessage)
+						if(!_game.IsRunning && (DateTime.Now - _lastUpdateCheck) > new TimeSpan(0, 10, 0) && !_showingUpdateMessage)
 							UpdateCheck();
 					}
 
-					if(!Game.IsRunning)
+					if(!_game.IsRunning)
 						Overlay.Update(true);
 
-					Game.IsRunning = true;
+					_game.IsRunning = true;
 					if(User32.IsHearthstoneInForeground())
 					{
 						if(hsForegroundChanged)
@@ -1391,22 +1411,22 @@ namespace Hearthstone_Deck_Tracker
 				else
 				{
 					Overlay.ShowOverlay(false);
-					if(Game.IsRunning)
+					if(_game.IsRunning)
 					{
 						//game was closed
 						Logger.WriteLine("Exited game", "UpdateOverlayLoop");
-						Game.CurrentRegion = Region.UNKNOWN;
+						_game.CurrentRegion = Region.UNKNOWN;
 						Logger.WriteLine("Reset region", "UpdateOverlayLoop");
-						HsLogReader.Instance.ClearLog();
-						Game.Reset();
+						HsLogReaderV2.Instance.ClearLog();
+						_game.Reset();
 						if(DeckList.Instance.ActiveDeck != null)
-							Game.SetPremadeDeck((Deck)DeckList.Instance.ActiveDeck.Clone());
-						HsLogReader.Instance.Reset(true);
+							_game.SetPremadeDeck((Deck)DeckList.Instance.ActiveDeck.Clone());
+						HsLogReaderV2.Instance.Reset(true);
 
 						if(Config.Instance.CloseWithHearthstone)
 							Close();
 					}
-					Game.IsRunning = false;
+					_game.IsRunning = false;
 				}
 
 				if(Config.Instance.NetDeckClipboardCheck.HasValue && Config.Instance.NetDeckClipboardCheck.Value && _initialized
@@ -1658,8 +1678,8 @@ namespace Hearthstone_Deck_Tracker
 				//set and save last used deck for class
 				if(setActive)
 				{
-					Overlay.ListViewPlayer.ItemsSource = Game.PlayerDeck;
-					PlayerWindow.ListViewPlayer.ItemsSource = Game.PlayerDeck;
+					Overlay.ListViewPlayer.ItemsSource = _game.PlayerDeck;
+					PlayerWindow.ListViewPlayer.ItemsSource = _game.PlayerDeck;
 					Logger.WriteLine("Set player itemsource as PlayerDeck", "Tracker");
 					while(DeckList.Instance.LastDeckClass.Any(ldc => ldc.Class == deck.Class))
 					{
@@ -1680,7 +1700,7 @@ namespace Hearthstone_Deck_Tracker
 			}
 			else
 			{
-				Game.IsUsingPremade = false;
+				_game.IsUsingPremade = false;
 
 				if(DeckList.Instance.ActiveDeck != null)
 					DeckList.Instance.ActiveDeck.IsSelectedInGui = false;
@@ -1689,8 +1709,8 @@ namespace Hearthstone_Deck_Tracker
 				if(setActive)
 				{
 					DeckPickerList.DeselectDeck();
-					Overlay.ListViewPlayer.ItemsSource = Game.PlayerDrawn;
-					PlayerWindow.ListViewPlayer.ItemsSource = Game.PlayerDrawn;
+					Overlay.ListViewPlayer.ItemsSource = _game.PlayerDrawn;
+					PlayerWindow.ListViewPlayer.ItemsSource = _game.PlayerDrawn;
 					Logger.WriteLine("set player item source to PlayerDrawn", "Tracker");
 				}
 

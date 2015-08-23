@@ -1,6 +1,9 @@
 Hearthstone-Deck-Tracker
 ========================
 
+###[Download](https://github.com/Epix37/Hearthstone-Deck-Tracker/releases)
+###[FAQ](https://github.com/Epix37/Hearthstone-Deck-Tracker/wiki/FAQ)
+
 [![Join the chat at https://gitter.im/Epix37/Hearthstone-Deck-Tracker](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Epix37/Hearthstone-Deck-Tracker?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This is an automatic deck tracker for Hearthstone.
@@ -49,7 +52,7 @@ Features:
 
 How to use: 
 ===========
-1) Download latest release [here](https://github.com/Epix37/Hearthstone-Deck-Tracker/releases) (green button)  
+1) Download latest release [here](https://github.com/Epix37/Hearthstone-Deck-Tracker/releases) (Hearthstone.Deck.Tracker-vx.xx.xx.zip)  
 2) Extract file  
 3) Run "Hearthstone Deck Tracker.exe"  
 4) Create your decks under "New" (or import from any of the supported websites), click save.  

@@ -83,6 +83,9 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 		}
 
 		[XmlIgnore]
+		public bool Jousted { get; set; }
+
+		[XmlIgnore]
 		public int Attack { get; set; }
 
 		[XmlIgnore]
@@ -169,7 +172,9 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 
 		private readonly Regex _overloadRegex = new Regex(@"Overload:.+?\((?<value>(\d+))\)");
 		private int? _overload;
-		[XmlIgnore]
+	    
+
+	    [XmlIgnore]
 		public int Overload
 		{
 			get
@@ -239,22 +244,22 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 
 		public int Height
 		{
-			get { return (int)(OverlayWindow.Scaling * 35); }
+			get { return (int)Math.Round(OverlayWindow.Scaling * 35, 0); }
 		}
 
 		public int OpponentHeight
 		{
-			get { return (int)(OverlayWindow.OpponentScaling * 35); }
+			get { return (int)Math.Round(OverlayWindow.OpponentScaling * 35, 0); }
 		}
 
 		public int PlayerWindowHeight
 		{
-			get { return (int)(PlayerWindow.Scaling * 35); }
+			get { return (int)Math.Round(PlayerWindow.Scaling * 35, 0); }
 		}
 
 		public int OpponentWindowHeight
 		{
-			get { return (int)(OpponentWindow.Scaling * 35); }
+			get { return (int)Math.Round(OpponentWindow.Scaling * 35, 0); }
 		}
 
 		public string GetPlayerClass
@@ -264,16 +269,17 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 
 		public SolidColorBrush ColorPlayer
 		{
+            //TODO: Consider moving this out of the Card class as it shouldn't care about the state of the Game 
 			get
 			{
 				Color color;
 				if(_justDrawn)
 					color = Colors.Orange;
-				else if(InHandCount > 0 && Game.HighlightCardsInHand || IsStolen)
+				else if(InHandCount > 0 && _game.HighlightCardsInHand || IsStolen)
 					color = Colors.GreenYellow;
-				else if(Count <= 0)
+				else if(Count <= 0 || Jousted)
 					color = Colors.Gray;
-				else if(WasDiscarded && Game.HighlightDiscarded)
+				else if(WasDiscarded && _game.HighlightDiscarded)
 					color = Colors.IndianRed;
 				else
 					color = Colors.White;
@@ -367,7 +373,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 					}
 
 					//dark overlay
-					if(Count <= 0)
+					if(Count <= 0 || Jousted)
 						drawingGroup.Children.Add(new ImageDrawing(new BitmapImage(new Uri("Images/dark.png", UriKind.Relative)), new Rect(0, 0, 218, 35)));
 
 					var brush = new ImageBrush {ImageSource = new DrawingImage(drawingGroup)};
@@ -413,12 +419,20 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			return Name.GetHashCode();
 		}
 
+
+        //TODO: This is to get around having a static Game class unless we change ColorPlayer
+        private static GameV2 _game;
+        public static void SetGame(GameV2 game)
+        {
+            _game = game;
+        }
+
 		public void Load()
 		{
 			if(_loaded)
 				return;
 
-			var stats = Game.GetCardFromId(Id);
+			var stats = GameV2.GetCardFromId(Id);
 			PlayerClass = stats.PlayerClass;
 			Rarity = stats.Rarity;
 			Type = stats.Type;
