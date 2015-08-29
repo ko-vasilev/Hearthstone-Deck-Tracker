@@ -25,6 +25,7 @@ using Hearthstone_Deck_Tracker.Controls.Error;
 using Hearthstone_Deck_Tracker.Enums;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.HearthStats.API;
+using Hearthstone_Deck_Tracker.HearthStats.Controls;
 using Hearthstone_Deck_Tracker.LogReader;
 using Hearthstone_Deck_Tracker.Plugins;
 using Hearthstone_Deck_Tracker.Replay;
@@ -769,6 +770,10 @@ namespace Hearthstone_Deck_Tracker
 				Text = "Hearthstone Deck Tracker v" + versionString
 			};
 
+			MenuItem startHearthstonMenuItem = new MenuItem("Start Launcher/Hearthstone", (sender, args) => StartHearthstoneAsync());
+			startHearthstonMenuItem.Name = "startHearthstone";
+			_notifyIcon.ContextMenu.MenuItems.Add(startHearthstonMenuItem);
+
 			MenuItem useNoDeckMenuItem = new MenuItem("Use no deck", (sender, args) => UseNoDeckContextMenu());
 			useNoDeckMenuItem.Name = "useNoDeck";
 			_notifyIcon.ContextMenu.MenuItems.Add(useNoDeckMenuItem);
@@ -860,6 +865,65 @@ namespace Hearthstone_Deck_Tracker
 			PluginManager.Instance.LoadPlugins();
 			Options.OptionsTrackerPlugins.Load();
 			PluginManager.Instance.StartUpdateAsync();
+		}
+
+		internal async void RemoveDuplicateMatches(bool showDialogIfNoneFound)
+		{
+			try
+			{
+				Logger.WriteLine("Checking for duplicate matches...");
+				var toRemove = new Dictionary<GameStats, List<GameStats>>();
+				foreach(var deck in DeckList.Instance.Decks)
+				{
+					var duplicates = deck.DeckStats.Games.Where(x => !string.IsNullOrEmpty(x.OpponentName)).GroupBy(g => new {g.OpponentName, g.Turns, g.PlayerHero, g.OpponentHero, g.Rank});
+					foreach(var games in duplicates)
+					{
+						if(games.Count() > 1)
+						{
+							var ordered = games.OrderBy(x => x.StartTime);
+							var original = ordered.First();
+							var filtered = ordered.Skip(1).Where(x => x.HasHearthStatsId).ToList();
+							if(filtered.Count > 0)
+								toRemove.Add(original, filtered);
+						}
+					}
+				}
+				if(toRemove.Count > 0)
+				{
+					var numMatches = toRemove.Sum(x => x.Value.Count);
+					Logger.WriteLine(numMatches + " duplicate matches found.");
+					var result =
+						await
+						this.ShowMessageAsync("Detected " + numMatches + " duplicate matches.",
+						                      "Due to sync issues some matches have been duplicated, click \"fix now\" to see and delete duplicates. Sorry about this.",
+						                      MessageDialogStyle.AffirmativeAndNegativeAndSingleAuxiliary,
+						                      new MetroDialogSettings
+						                      {
+							                      AffirmativeButtonText = "fix now",
+							                      NegativeButtonText = "fix later",
+							                      FirstAuxiliaryButtonText = "don't fix"
+						                      });
+					if(result == MessageDialogResult.Affirmative)
+					{
+						var dmw = new DuplicateMatchesWindow();
+						dmw.LoadMatches(toRemove);
+						dmw.Show();
+					}
+					else if(result == MessageDialogResult.FirstAuxiliary)
+					{
+						Config.Instance.FixedDuplicateMatches = true;
+						Config.Save();
+					}
+				}
+				else if(showDialogIfNoneFound)
+				{
+					await this.ShowMessageAsync("No duplicate matches found.", "");
+				}
+			}
+			catch(Exception e)
+			{
+				Logger.WriteLine("Error checking for duplicate matches: "  + e);
+			}
 		}
 
 		private void DeckPickerList_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -1031,7 +1095,7 @@ namespace Hearthstone_Deck_Tracker
 						if(_currentNewsId > oldNewsId
 						   || StatusBarNews.Visibility == Visibility.Collapsed && _currentNewsId > Config.Instance.IgnoreNewsId)
 						{
-							TopRow.Height = new GridLength(20);
+							TopRow.Height = new GridLength(26);
 							StatusBarNews.Visibility = Visibility.Visible;
 							MinHeight += StatusBarNewsHeight;
 							UpdateNews(0);
@@ -1358,8 +1422,10 @@ namespace Hearthstone_Deck_Tracker
 
 		private async void UpdateOverlayAsync()
 		{
-			UpdateCheck();
+			if(Config.Instance.CheckForUpdates)
+				UpdateCheck();
 			var hsForegroundChanged = false;
+			int useNoDeckMenuItem = _notifyIcon.ContextMenu.MenuItems.IndexOfKey("startHearthstone");
 			while(_doUpdate)
 			{
 
@@ -1380,6 +1446,9 @@ namespace Hearthstone_Deck_Tracker
 
 					if(!_game.IsRunning)
 						Overlay.Update(true);
+
+					BtnStartHearthstone.Visibility = Visibility.Collapsed;
+					_notifyIcon.ContextMenu.MenuItems[useNoDeckMenuItem].Visible = false;
 
 					_game.IsRunning = true;
 					if(User32.IsHearthstoneInForeground())
@@ -1424,6 +1493,9 @@ namespace Hearthstone_Deck_Tracker
 						if(DeckList.Instance.ActiveDeck != null)
 							_game.SetPremadeDeck((Deck)DeckList.Instance.ActiveDeck.Clone());
 						HsLogReaderV2.Instance.Reset(true);
+
+						BtnStartHearthstone.Visibility = Visibility.Visible;
+						_notifyIcon.ContextMenu.MenuItems[useNoDeckMenuItem].Visible = true;
 
 						if(Config.Instance.CloseWithHearthstone)
 							Close();
@@ -1794,5 +1866,56 @@ namespace Hearthstone_Deck_Tracker
 		}
 
 		#endregion
+
+		private void BtnStartHearthstone_Click(object sender, RoutedEventArgs e)
+		{
+			StartHearthstoneAsync();
+		}
+
+		private async Task StartHearthstoneAsync()
+		{
+			if(User32.GetHearthstoneWindow() != IntPtr.Zero)
+				return;
+			BtnStartHearthstone.IsEnabled = false;
+			int useNoDeckMenuItem = _notifyIcon.ContextMenu.MenuItems.IndexOfKey("startHearthstone");
+			_notifyIcon.ContextMenu.MenuItems[useNoDeckMenuItem].Enabled = false;
+			try
+			{
+				var bnetProc = Process.GetProcessesByName("Battle.net").FirstOrDefault();
+				if(bnetProc == null)
+				{
+					Process.Start("battlenet://");
+
+					var foundBnetWindow = false;
+					TextBlockBtnStartHearthstone.Text = "STARTING LAUNCHER...";
+					for(int i = 0; i < 20; i++)
+					{
+						bnetProc = Process.GetProcessesByName("Battle.net").FirstOrDefault();
+						if(bnetProc != null && bnetProc.MainWindowHandle != IntPtr.Zero)
+						{
+							foundBnetWindow = true;
+							break;
+						}
+						await Task.Delay(500);
+					}
+					TextBlockBtnStartHearthstone.Text = "START LAUNCHER / HEARTHSTONE";
+					if(!foundBnetWindow)
+					{
+						this.ShowMessageAsync("Error starting battle.net launcher", "Could not find or start the battle.net launcher.");
+						BtnStartHearthstone.IsEnabled = true;
+						return;
+					}
+				}
+				await Task.Delay(2000); //just to make sure
+				Process.Start("battlenet://WTCG");
+			}
+			catch(Exception ex)
+			{
+				Logger.WriteLine("Error starting launcher/hearthstone: " + ex);
+			}
+
+			_notifyIcon.ContextMenu.MenuItems[useNoDeckMenuItem].Enabled = true;
+			BtnStartHearthstone.IsEnabled = true;
+		}
 	}
 }
