@@ -23,7 +23,7 @@ namespace Hearthstone_Deck_Tracker
     /// <summary>
     ///     Interaction logic for OverlayWindow.xaml
     /// </summary>
-    public partial class OverlayWindow
+    public partial class OverlayWindow : Window
     {
         private readonly GameV2 _game;
         private readonly int _customHeight;
@@ -711,8 +711,18 @@ namespace Hearthstone_Deck_Tracker
             var region = (int)_game.CurrentRegion - 1;
             if (region >= 0)
             {
-                LblGoldProgress.Text = string.Format("Wins: {0}/3 ({1}/100G)", Config.Instance.GoldProgress[region],
-                                                     Config.Instance.GoldProgressTotal[region]);
+                int wins = Config.Instance.GoldProgress[region];
+                if (wins < 3)
+                {
+                    LblGoldProgress.Text = string.Format("Wins: {0}/3 ({1}/100G)", wins,
+                        Config.Instance.GoldProgressTotal[region]);
+                }
+                else
+                {
+                    LblGoldProgress.Text = string.Format("At least {2} wins did not get gold reward , Wins: {0}/3 ({1}/100G) , ",
+                        wins,
+                        Config.Instance.GoldProgressTotal[region], wins - 2);
+                }
             }
         }
 
@@ -1081,7 +1091,7 @@ namespace Hearthstone_Deck_Tracker
             foreach (var id in secrets)
             {
                 var cardObj = new Controls.Card();
-                var card = GameV2.GetCardFromId(id.CardId);
+                var card = Database.GetCardFromId(id.CardId);
                 card.Count = id.AdjustedCount(_game);
                 cardObj.SetValue(DataContextProperty, card);
                 StackPanelSecrets.Children.Add(cardObj);
@@ -1107,7 +1117,7 @@ namespace Hearthstone_Deck_Tracker
             foreach (var id in CardIds.SubCardIds[card.Id])
             {
                 var tooltip = new CardToolTip();
-                tooltip.SetValue(DataContextProperty, GameV2.GetCardFromId(id));
+                tooltip.SetValue(DataContextProperty, Database.GetCardFromId(id));
                 StackPanelAdditionalTooltips.Children.Add(tooltip);
             }
 
