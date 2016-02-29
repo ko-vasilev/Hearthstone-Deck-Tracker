@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using Hearthstone_Deck_Tracker.API;
 using Hearthstone_Deck_Tracker.HearthStats.API;
+using Hearthstone_Deck_Tracker.Utility.Logging;
 using MahApps.Metro.Controls.Dialogs;
 using Newtonsoft.Json;
 
@@ -46,9 +47,9 @@ namespace Hearthstone_Deck_Tracker.Protocol
 			Core.MainWindow.ActivateWindow();
 			if(decks.Count > 1 || AutoSave)
 			{
-				var log = string.Format("Saving {0} decks", decks.Count);
+				var log = $"Saving {decks.Count} decks";
 				var controller = await Core.MainWindow.ShowProgressAsync(log, "Please wait...");
-				Logger.WriteLine(log);
+				Log.Info(log);
 				foreach(var deck in decks)
 				{
 					try
@@ -56,14 +57,14 @@ namespace Hearthstone_Deck_Tracker.Protocol
 						DeckList.Instance.Decks.Add(deck);
 						if(Config.Instance.HearthStatsAutoUploadNewDecks && HearthStatsAPI.IsLoggedIn)
 						{
-							Logger.WriteLine("auto uploading new deck", "JsonDecksWrapper");
+							Log.Info("auto uploading new deck");
 							await HearthStatsManager.UploadDeckAsync(deck, background: true);
 						}
 						DeckManagerEvents.OnDeckCreated.Execute(deck);
 					}
 					catch(Exception ex)
 					{
-						Logger.WriteLine("Error saving deck: " + ex, "JsonDecksWrapper");
+						Log.Error(ex);
 					}
 				}
 				Core.MainWindow.DeckPickerList.UpdateDecks();

@@ -1,6 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region
+
 using Garlic;
+
+#endregion
 
 //using Garlic;
 
@@ -17,9 +19,7 @@ namespace Hearthstone_Deck_Tracker.Analytics
 		{
 			if(!Config.Instance.GoogleAnalytics)
 				return;
-			if(_pageViewRequest == null)
-				return;
-			_pageViewRequest.SendEvent(category, action, label, value);
+			_pageViewRequest?.SendEvent(category, action, label, value);
 		}
 
 		public static void TrackPageView(string page, string title)

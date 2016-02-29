@@ -6,6 +6,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.LogReader.Handlers;
+using Hearthstone_Deck_Tracker.Utility.Logging;
+using static Hearthstone_Deck_Tracker.API.LogEvents;
+using static Hearthstone_Deck_Tracker.LogReader.HsLogReaderConstants;
 
 #endregion
 
@@ -15,14 +18,16 @@ namespace Hearthstone_Deck_Tracker.LogReader
 	{
 		private static readonly SortedList<DateTime, List<LogLineItem>> ToProcess = new SortedList<DateTime, List<LogLineItem>>();
 		private static readonly List<LogReader> LogReaders = new List<LogReader>();
-		private static readonly PowerGameStateHandler PowerGameStateLineHandler = new PowerGameStateHandler();
+		private static readonly PowerHandler PowerLineHandler = new PowerHandler();
 		private static readonly RachelleHandler RachelleHandler = new RachelleHandler();
 		private static readonly AssetHandler AssetHandler = new AssetHandler();
-		private static readonly ZoneHandler ZoneHandler = new ZoneHandler();
 		private static readonly BobHandler BobHandler = new BobHandler();
 		private static readonly ArenaHandler ArenaHandler = new ArenaHandler();
+		private static readonly NetHandler NetHandler = new NetHandler();
+		private static readonly LoadingScreenHandler LoadingScreenHandler = new LoadingScreenHandler();
+		private static LogReader _gameStatePowerLogReader;
 		private static LogReader _powerLogReader;
-		private static LogReader _bobLogReader;
+		private static LogReader _netLogReader;
 		private static HsGameState _gameState;
 		private static GameV2 _game;
 		private static DateTime _startingPoint;
@@ -31,14 +36,16 @@ namespace Hearthstone_Deck_Tracker.LogReader
 
 		private static void InitializeLogReaders()
 		{
-			_powerLogReader = new LogReader(HsLogReaderConstants.PowerLogReaderInfo);
-			_bobLogReader = new LogReader(HsLogReaderConstants.BobLogReaderInfo);
+			_gameStatePowerLogReader = new LogReader(GameStatePowerLogReaderInfo);
+			_powerLogReader = new LogReader(PowerLogReaderInfo);
+			_netLogReader = new LogReader(NetLogReaderInfo);
 			LogReaders.Add(_powerLogReader);
-			LogReaders.Add(_bobLogReader);
-			LogReaders.Add(new LogReader(HsLogReaderConstants.ZoneLogReaderInfo));
-			LogReaders.Add(new LogReader(HsLogReaderConstants.RachelleLogReaderInfo));
-			LogReaders.Add(new LogReader(HsLogReaderConstants.AssetLogReaderInfo));
-			LogReaders.Add(new LogReader(HsLogReaderConstants.ArenaLogReaderInfo));
+			LogReaders.Add(_netLogReader);
+			LogReaders.Add(new LogReader(BobLogReaderInfo));
+			LogReaders.Add(new LogReader(RachelleLogReaderInfo));
+			LogReaders.Add(new LogReader(AssetLogReaderInfo));
+			LogReaders.Add(new LogReader(ArenaLogReaderInfo));
+			LogReaders.Add(new LogReader(LoadingScreenLogReaderInfo));
 		}
 
 		public static void Start(GameV2 game)
@@ -55,8 +62,10 @@ namespace Hearthstone_Deck_Tracker.LogReader
 				return;
 			foreach(var logReader in LogReaders)
 				logReader.Start(_startingPoint);
+			_gameStatePowerLogReader.Start(_startingPoint);
 			_running = true;
 			_stop = false;
+			var powerLines = new List<LogLineItem>();
 			while(!_stop)
 			{
 				await Task.Factory.StartNew(() =>
@@ -72,8 +81,14 @@ namespace Hearthstone_Deck_Tracker.LogReader
 							logLines.Add(line);
 						}
 					}
+					powerLines = _gameStatePowerLogReader.Collect();
 				});
 				ProcessNewLines();
+				if(powerLines.Any())
+				{
+					Core.Game.PowerLog.AddRange(powerLines.Select(x => x.Line));
+					powerLines.Clear();
+				}
 				await Task.Delay(Config.Instance.UpdateDelay);
 			}
 			_running = false;
@@ -81,61 +96,41 @@ namespace Hearthstone_Deck_Tracker.LogReader
 
 		private static DateTime GetStartingPoint()
 		{
-			var powerEntry = _powerLogReader.FindEntryPoint(new [] {"GameState.DebugPrintPower() - CREATE_GAME", "tag=GOLD_REWARD_STATE" });
-			var bobEntry = _bobLogReader.FindEntryPoint("legend rank");
-			return powerEntry > bobEntry ? powerEntry : bobEntry;
+			var powerEntry =
+				_powerLogReader.FindEntryPoint(new[] {"tag=GOLD_REWARD_STATE", "End Spectator"});
+			var netEntry = _netLogReader.FindEntryPoint("ConnectAPI.GotoGameServer");
+			return netEntry > powerEntry ? netEntry : powerEntry;
 		}
 
-		public static int GetTurnNumber()
-		{
-			return _gameState.GetTurnNumber();
-		}
+		public static int GetTurnNumber() => _gameState.GetTurnNumber();
 
-		public static void ResetRankedDetection()
-		{
-			_gameState.RankedDetectionComplete = false;
-		}
-		public static async Task<bool> RankedDetection(int timeoutInSeconds = 3)
-		{
-			if(_gameState.AwaitingRankedDetection || _gameState.RankedDetectionComplete)
-			{
-				while(!_gameState.RankedDetectionComplete)
-					await Task.Delay(100);
-				return _gameState.FoundRanked;
-			}
-			_gameState.AwaitingRankedDetection = true;
-			_gameState.WaitingForFirstAssetUnload = true;
-			_gameState.FoundRanked = false;
-			_gameState.LastAssetUnload = DateTime.Now;
-			var timeout = TimeSpan.FromSeconds(timeoutInSeconds);
-			while(_gameState.WaitingForFirstAssetUnload || (DateTime.Now - _gameState.LastAssetUnload) < timeout)
-			{
-				await Task.Delay(100);
-				if(_gameState.FoundRanked)
-					break;
-			}
-			_gameState.RankedDetectionComplete = true;
-			_gameState.AwaitingRankedDetection = false;
-			return _gameState.FoundRanked;
-		}
-
-		public static async Task Stop()
+		public static async Task<bool> Stop(bool force = false)
 		{
 			if(!_running)
-				return;
+			{
+				Log.Warn("LogReaders could not be stopped, stop already in progress.");
+				return false;
+			}
 			_stop = true;
 			while(_running)
 				await Task.Delay(50);
-			await Task.WhenAll(LogReaders.Select(x => x.Stop()));
+			await Task.WhenAll(LogReaders.Where(x => force || x.Info.Reset).Concat(new[] {_gameStatePowerLogReader}).Select(x => x.Stop()));
+			Log.Info("Stopped LogReaders.");
+			return true;
 		}
 
-		public static async Task Restart()
+		/// <summary>
+		/// LogReaderManager.Stop needs to be called first!
+		/// These can not happen in one call because other things need to be reset between stopping and restarting.
+		/// </summary>
+		public static void Restart()
 		{
-			if(!_running)
+			if(_running)
 				return;
-			await Stop();
+			Log.Info("Restarting LogReaders.");
 			_startingPoint = GetStartingPoint();
 			_gameState.Reset();
+			_game.GameTime.TimedTasks.Clear();
 			StartLogReaders();
 		}
 
@@ -154,31 +149,34 @@ namespace Hearthstone_Deck_Tracker.LogReader
 			{
 				foreach(var line in item.Value.Where(line => line != null))
 				{
+					_game.GameTime.Time = line.Time;
 					switch(line.Namespace)
 					{
 						case "Power":
-							PowerGameStateLineHandler.Handle(line.Line, _gameState, _game);
-							API.LogEvents.OnPowerLogLine.Execute(line.Line);
-							break;
-						case "Zone":
-							ZoneHandler.Handle(line.Line, _gameState);
-							API.LogEvents.OnZoneLogLine.Execute(line.Line);
+							PowerLineHandler.Handle(line.Line, _gameState, _game);
+							OnPowerLogLine.Execute(line.Line);
 							break;
 						case "Asset":
 							AssetHandler.Handle(line.Line, _gameState, _game);
-							API.LogEvents.OnAssetLogLine.Execute(line.Line);
+							OnAssetLogLine.Execute(line.Line);
 							break;
 						case "Bob":
 							BobHandler.Handle(line.Line, _gameState, _game);
-                            API.LogEvents.OnBobLogLine.Execute(line.Line);
+							OnBobLogLine.Execute(line.Line);
 							break;
 						case "Rachelle":
 							RachelleHandler.Handle(line.Line, _gameState, _game);
-							API.LogEvents.OnRachelleLogLine.Execute(line.Line);
+							OnRachelleLogLine.Execute(line.Line);
 							break;
 						case "Arena":
 							ArenaHandler.Handle(line.Line, _gameState, _game);
-							API.LogEvents.OnArenaLogLine.Execute(line.Line);
+							OnArenaLogLine.Execute(line.Line);
+							break;
+						case "LoadingScreen":
+							LoadingScreenHandler.Handle(line.Line, _gameState, _game);
+							break;
+						case "Net":
+							NetHandler.Handle(line.Line, _gameState, _game);
 							break;
 					}
 				}

@@ -9,6 +9,7 @@ using Hearthstone_Deck_Tracker.Enums;
 using Hearthstone_Deck_Tracker.Enums.Hearthstone;
 using Hearthstone_Deck_Tracker.Hearthstone;
 using Hearthstone_Deck_Tracker.Hearthstone.Entities;
+using Hearthstone_Deck_Tracker.Utility.Logging;
 using Newtonsoft.Json;
 
 #endregion
@@ -19,17 +20,11 @@ namespace Hearthstone_Deck_Tracker.Replay
 	{
 		private static readonly List<ReplayKeyPoint> Points = new List<ReplayKeyPoint>();
 
-		public static void Reset()
-		{
-			Points.Clear();
-		}
+		public static void Reset() => Points.Clear();
 
-		public static void Generate(KeyPointType type, int id, ActivePlayer player, IGame game)
-		{
-			Points.Add(new ReplayKeyPoint(game.Entities.Values.ToArray(), type, id, player));
-		}
+		public static void Generate(KeyPointType type, int id, ActivePlayer player, IGame game) => Points.Add(new ReplayKeyPoint(game.Entities.Values.ToArray(), type, id, player));
 
-		public static string SaveToDisk()
+		public static string SaveToDisk(List<string> powerLog)
 		{
 			try
 			{
@@ -41,14 +36,17 @@ namespace Hearthstone_Deck_Tracker.Replay
 
 				var player = Points.Last().Data.First(x => x.IsPlayer);
 				var opponent = Points.Last().Data.First(x => x.HasTag(GAME_TAG.PLAYER_ID) && !x.IsPlayer);
-				var playerHero = Points.Last().Data.First(x => x.GetTag(GAME_TAG.CARDTYPE) == (int)TAG_CARDTYPE.HERO
-					                  && x.IsControlledBy(player.GetTag(GAME_TAG.CONTROLLER)));
+				var playerHero =
+					Points.Last()
+					      .Data.First(
+					                  x =>
+					                  x.GetTag(GAME_TAG.CARDTYPE) == (int)TAG_CARDTYPE.HERO && x.IsControlledBy(player.GetTag(GAME_TAG.CONTROLLER)));
 				var opponentHero =
 					Points.Last()
 					      .Data.FirstOrDefault(
 					                           x =>
-											   x.GetTag(GAME_TAG.CARDTYPE) == (int)TAG_CARDTYPE.HERO
-											   && x.IsControlledBy(opponent.GetTag(GAME_TAG.CONTROLLER)));
+					                           x.GetTag(GAME_TAG.CARDTYPE) == (int)TAG_CARDTYPE.HERO
+					                           && x.IsControlledBy(opponent.GetTag(GAME_TAG.CONTROLLER)));
 				if(opponentHero == null)
 				{
 					//adventure bosses
@@ -63,8 +61,8 @@ namespace Hearthstone_Deck_Tracker.Replay
 					ResolveOpponentName(Database.GetHeroNameFromId(opponentHero.CardId));
 				}
 
-				var fileName = string.Format("{0}({1}) vs {2}({3}) {4}", player.Name, Database.GetHeroNameFromId(playerHero.CardId), opponent.Name,
-                                             Database.GetHeroNameFromId(opponentHero.CardId), DateTime.Now.ToString("HHmm-ddMMyy"));
+				var fileName =
+					$"{player.Name}({Database.GetHeroNameFromId(playerHero.CardId)}) vs {opponent.Name}({Database.GetHeroNameFromId(opponentHero.CardId)}) {DateTime.Now.ToString("HHmm-ddMMyy")}";
 
 
 				if(!Directory.Exists(Config.Instance.ReplayDir))
@@ -86,7 +84,7 @@ namespace Hearthstone_Deck_Tracker.Replay
 
 							using(var logStream = hsLog.Open())
 							using(var swLog = new StreamWriter(logStream))
-                                GameV2.HSLogLines.ForEach(swLog.WriteLine);
+								powerLog?.ForEach(swLog.WriteLine);
 						}
 					}
 
@@ -100,7 +98,7 @@ namespace Hearthstone_Deck_Tracker.Replay
 			}
 			catch(Exception e)
 			{
-				Logger.WriteLine(e.ToString(), "ReplayMaker");
+				Log.Error(e);
 				return null;
 			}
 		}

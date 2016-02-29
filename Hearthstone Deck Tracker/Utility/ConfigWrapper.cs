@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Hearthstone_Deck_Tracker.Enums;
+﻿#region
+
+using System;
+using System.Windows;
+
+#endregion
 
 namespace Hearthstone_Deck_Tracker.Utility
 {
@@ -78,5 +78,19 @@ namespace Hearthstone_Deck_Tracker.Utility
 				Config.Save();
 			}
 		}
+
+		public static bool ArenaSummaryChartsExpanded
+		{
+			get { return Config.Instance.ArenaSummaryChartsExpanded; }
+			set
+			{
+				Config.Instance.ArenaSummaryChartsExpanded = value;
+				Config.Save();
+			}
+		}
+
+		public static Visibility ShowLastPlayedDateOnDeckVisibility => Config.Instance.ShowLastPlayedDateOnDeck ? Visibility.Visible : Visibility.Collapsed;
+
+		public static Visibility UseButtonVisiblity => Config.Instance.AutoUseDeck ? Visibility.Collapsed : Visibility.Visible;
 	}
 }
