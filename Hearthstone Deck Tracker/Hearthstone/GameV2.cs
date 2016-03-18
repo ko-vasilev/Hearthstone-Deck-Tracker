@@ -70,6 +70,8 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 		public Dictionary<int, Entity> Entities { get; set; }
 		public GameMetaData MetaData { get; } = new GameMetaData();
 		internal List<Tuple<string, List<string>>> StoredPowerLogs { get; } = new List<Tuple<string, List<string>>>();
+		internal Dictionary<int, string> StoredPlayerNames { get; } = new Dictionary<int, string>();
+		internal GameStats StoredGameStats { get; set; }
 
 		public Mode CurrentMode
 		{
@@ -88,6 +90,8 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 		public Entity PlayerEntity => Entities.FirstOrDefault(x => x.Value.IsPlayer).Value;
 
 		public Entity OpponentEntity => Entities.FirstOrDefault(x => x.Value.HasTag(GAME_TAG.PLAYER_ID) && !x.Value.IsPlayer).Value;
+
+		public Entity GameEntity => Entities.FirstOrDefault(x => x.Value?.Name == "GameEntity").Value;
 
 		public bool IsMulliganDone
 		{
@@ -187,12 +191,32 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			_gameModeDetectionRunning = false;
 		}
 
-		public void StorePowerLog()
+		public void StoreGameState()
 		{
 			if(string.IsNullOrEmpty(MetaData.GameId))
 				return;
 			Log.Info($"Storing PowerLog for gameId={MetaData.GameId}");
 			StoredPowerLogs.Add(new Tuple<string, List<string>>(MetaData.GameId, new List<string>(PowerLog)));
+			if(Player.Id != -1 && !StoredPlayerNames.ContainsKey(Player.Id))
+				StoredPlayerNames.Add(Player.Id, Player.Name);
+			if(Opponent.Id != -1 && !StoredPlayerNames.ContainsKey(Opponent.Id))
+				StoredPlayerNames.Add(Opponent.Id, Opponent.Name);
+			if(StoredGameStats == null)
+				StoredGameStats = CurrentGameStats;
+		}
+
+		public string GetStoredPlayerName(int id)
+		{
+			string name;
+			StoredPlayerNames.TryGetValue(id, out name);
+			return name;
+		}
+
+		internal void ResetStoredGameState()
+		{
+			StoredPowerLogs.Clear();
+			StoredPlayerNames.Clear();
+			StoredGameStats = null;
 		}
 
 		public void NewArenaDeck(string heroId)

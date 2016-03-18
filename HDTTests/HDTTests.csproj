@@ -36,6 +36,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="HearthDb, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Visual Studio 2015\Projects\HearthDb\HearthDb\bin\Release\HearthDb.dll</HintPath>
+    </Reference>
     <Reference Include="Rhino.Mocks, Version=3.6.0.0, Culture=neutral, PublicKeyToken=0b3305902db7183f, processorArchitecture=MSIL">
       <HintPath>..\packages\RhinoMocks.3.6.1\lib\net\Rhino.Mocks.dll</HintPath>
       <Private>True</Private>
@@ -63,7 +67,6 @@
     <Compile Include="BoardDamage\BoardStateTest.cs" />
     <Compile Include="BoardDamage\EntityHelperTest.cs" />
     <Compile Include="HearthStats\ApiTest.cs" />
-    <Compile Include="Hearthstone\DatabaseTest.cs" />
     <Compile Include="Hearthstone\GameTimeTest.cs" />
     <Compile Include="Hearthstone\SecretTests.cs" />
     <Compile Include="Hearthstone\WebImportTest.cs" />

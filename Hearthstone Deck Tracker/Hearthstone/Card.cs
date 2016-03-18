@@ -20,7 +20,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 	public class Card : ICloneable, INotifyPropertyChanged
 	{
 		[NonSerialized]
-		private readonly HearthDb.Card _dbCard;
+		private HearthDb.Card _dbCard;
 
 		private readonly Regex _overloadRegex = new Regex(@"Overload:.+?\((?<value>(\d+))\)");
 
@@ -67,7 +67,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 
 		public Card(string id, string playerClass, Rarity rarity, string type, string name, int cost, string localizedName, int inHandCount,
 		            int count, string text, string englishText, int attack, int health, string race, string[] mechanics, int? durability,
-		            string artist, string set, List<string> alternativeNames = null, List<string> alternativeTexts = null)
+		            string artist, string set, List<string> alternativeNames = null, List<string> alternativeTexts = null, HearthDb.Card dbCard = null)
 		{
 			Id = id;
 			PlayerClass = playerClass;
@@ -91,6 +91,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 				AlternativeNames = alternativeNames;
 			if(alternativeTexts != null)
 				AlternativeTexts = alternativeTexts;
+			_dbCard = dbCard;
 		}
 
 		private Language? _selectedLanguage;
@@ -163,33 +164,38 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 		[XmlIgnore]
 		public string Text
 		{
-			get { return _text; }
-			set { _text = CleanUpText(value); }
+			get { return CleanUpText(_text); }
+			set { _text = value; }
 		}
+
+		[XmlIgnore]
+		public string FormattedText => CleanUpText(_text, false) ?? "";
 
 		[XmlIgnore]
 		public string EnglishText
 		{
-			get { return string.IsNullOrEmpty(_englishText) ? Text : _englishText; }
-			set { _englishText = CleanUpText(value); }
+			get { return CleanUpText(string.IsNullOrEmpty(_englishText) ? Text : _englishText); }
+			set { _englishText =value; }
 		}
 
 		[XmlIgnore]
-		public string AlternativeLanguageText
+		public string AlternativeLanguageText => GetAlternativeText(false);
+
+		[XmlIgnore]
+		public string FormattedAlternativeLanguageText => GetAlternativeText(true);
+
+		private string GetAlternativeText(bool formatted)
 		{
-			get
+			var result = "";
+			for(var i = 0; i < AlternativeNames.Count; ++i)
 			{
-				var result = "";
-				for(var i = 0; i < AlternativeNames.Count; ++i)
-				{
-					if(i > 0)
-						result += "-\n";
-					result += "[" + AlternativeNames[i] + "]\n";
-					if(AlternativeTexts[i] != null)
-						result += CleanUpText(AlternativeTexts[i]) + "\n";
-				}
-				return result.TrimEnd(' ', '\n');
+				if(i > 0)
+					result += "-\n";
+				result += "[" + AlternativeNames[i] + "]\n";
+				if(AlternativeTexts[i] != null)
+					result += CleanUpText(AlternativeTexts[i], !formatted) + "\n";
 			}
+			return result.TrimEnd(' ', '\n');
 		}
 
 		[XmlIgnore]
@@ -399,9 +405,12 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 
 		[XmlIgnore]
 		public string FlavorText => CleanUpText(_dbCard?.GetLocFlavorText(SelectedLanguage)) ?? "";
+		
+		[XmlIgnore]
+		public string FormattedFlavorText => CleanUpText(_dbCard?.GetLocFlavorText(SelectedLanguage), false) ?? "";
 
-		public object Clone() => new Card(Id, PlayerClass, Rarity, Type, Name, Cost, LocalizedName, InHandCount, Count, Text, EnglishText, Attack,
-										  Health, Race, Mechanics, Durability, Artist, Set, AlternativeNames, AlternativeTexts);
+		public object Clone() => new Card(Id, PlayerClass, Rarity, Type, Name, Cost, LocalizedName, InHandCount, Count, _text, EnglishText, Attack,
+										  Health, Race, Mechanics, Durability, Artist, Set, AlternativeNames, AlternativeTexts, _dbCard);
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
@@ -432,7 +441,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			Cost = stats.Cost;
 			LocalizedName = stats.LocalizedName;
 			InHandCount = stats.InHandCount;
-			Text = stats.Text;
+			Text = stats._text;
 			EnglishText = stats.EnglishText;
 			Attack = stats.Attack;
 			Health = stats.Health;
@@ -443,6 +452,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			Set = stats.Set;
 			AlternativeNames = stats.AlternativeNames;
 			AlternativeTexts = stats.AlternativeTexts;
+			_dbCard = stats._dbCard;
 			_loaded = true;
 			OnPropertyChanged();
 		}
@@ -452,7 +462,11 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 
-		private string CleanUpText(string text) => text?.Replace("<b>", "").Replace("</b>", "").Replace("<i>", "").Replace("</i>", "")
-													   .Replace("$", "").Replace("#", "").Replace("\\n", "\n");
+		private static string CleanUpText(string text, bool replaceTags = true)
+		{
+			if (replaceTags)
+				text = text?.Replace("<b>", "").Replace("</b>", "").Replace("<i>", "").Replace("</i>", "");
+			return text?.Replace("$", "").Replace("#", "").Replace("\\n", "\n");
+		}
 	}
 }

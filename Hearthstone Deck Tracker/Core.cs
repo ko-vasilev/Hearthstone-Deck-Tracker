@@ -13,6 +13,7 @@ using Hearthstone_Deck_Tracker.Plugins;
 using Hearthstone_Deck_Tracker.Utility;
 using Hearthstone_Deck_Tracker.Utility.Extensions;
 using Hearthstone_Deck_Tracker.Utility.HotKeys;
+using Hearthstone_Deck_Tracker.Utility.LogConfig;
 using Hearthstone_Deck_Tracker.Utility.Logging;
 using Hearthstone_Deck_Tracker.Windows;
 using MahApps.Metro.Controls.Dialogs;
@@ -49,6 +50,8 @@ namespace Hearthstone_Deck_Tracker
 			Config.Load();
 			Log.Initialize();
 			ConfigManager.Run();
+			LogConfigUpdater.Run().Forget();
+			LogConfigWatcher.Start();
 			Helper.UpdateAppTheme();
 			var splashScreenWindow = new SplashScreenWindow();
 			splashScreenWindow.ShowConditional();
@@ -91,20 +94,6 @@ namespace Hearthstone_Deck_Tracker
 			NetDeck.CheckForChromeExtention();
 			DataIssueResolver.Run();
 
-			if(Helper.HearthstoneDirExists)
-			{
-				if(ConfigManager.LogConfigUpdateFailed)
-					MainWindow.ShowLogConfigUpdateFailedMessage().Forget();
-				else if(ConfigManager.LogConfigUpdated && Game.IsRunning)
-				{
-					MainWindow.ShowMessageAsync("Restart Hearthstone",
-					                            "This is either your first time starting HDT or the log.config file has been updated. Please restart Hearthstone, for HDT to work properly.");
-				}
-				LogReaderManager.Start(Game);
-			}
-			else
-				MainWindow.ShowHsNotInstalledMessage().Forget();
-
 			Helper.CopyReplayFiles();
 			BackupManager.Run();
 
@@ -123,8 +112,27 @@ namespace Hearthstone_Deck_Tracker
 			PluginManager.Instance.StartUpdateAsync();
 
 			UpdateOverlayAsync();
+
+			if(Helper.HearthstoneDirExists)
+			{
+				if(LogConfigUpdater.LogConfigUpdateFailed)
+					MainWindow.ShowLogConfigUpdateFailedMessage().Forget();
+				else if(LogConfigUpdater.LogConfigUpdated && Game.IsRunning)
+				{
+					MainWindow.ShowMessageAsync("Hearthstone restart required", "The log.config file has been updated. HDT may not work properly until Hearthstone has been restarted.");
+					Overlay.ShowRestartRequiredWarning();
+				}
+				LogReaderManager.Start(Game);
+			}
+			else
+				MainWindow.ShowHsNotInstalledMessage().Forget();
+
 			NewsUpdater.UpdateAsync();
 			HotKeyManager.Load();
+
+			if(Helper.HearthstoneDirExists && Config.Instance.StartHearthstoneWithHDT && !Game.IsRunning)
+				Helper.StartHearthstoneAsync();
+
 			Initialized = true;
 
 			Analytics.Analytics.TrackPageView($"/app/v{Helper.GetCurrentVersion().ToVersionString()}/{loginType.ToString().ToLower()}{(newUser ? "/new" : "")}", "");
@@ -198,12 +206,13 @@ namespace Hearthstone_Deck_Tracker
 					{
 						//game was closed
 						if(!Game.IsInMenu)
-							Game.StorePowerLog();
+							Game.StoreGameState();
 						Log.Info("Exited game");
 						Game.CurrentRegion = Region.UNKNOWN;
 						Log.Info("Reset region");
 						await Reset();
 						Game.IsInMenu = true;
+						Overlay.HideRestartRequiredWarning();
 
 						MainWindow.BtnStartHearthstone.Visibility = Visibility.Visible;
 						TrayIcon.NotifyIcon.ContextMenu.MenuItems[useNoDeckMenuItem].Visible = true;

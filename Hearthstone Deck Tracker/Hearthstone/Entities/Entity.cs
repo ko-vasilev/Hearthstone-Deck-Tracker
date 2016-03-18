@@ -39,8 +39,10 @@ namespace Hearthstone_Deck_Tracker.Hearthstone.Entities
 		/// </Summary>
 		public bool IsPlayer { get; set; }
 
+		internal void SetPlayer(bool isPlayer) => IsPlayer = isPlayer;
+
 		[JsonIgnore]
-		public bool IsHero => Database.IsHero(CardId);
+		public bool IsHero => GetTag(GAME_TAG.CARDTYPE) == (int)TAG_CARDTYPE.HERO;
 
 		[JsonIgnore]
 		public bool IsActiveDeathrattle => HasTag(GAME_TAG.DEATHRATTLE) && GetTag(GAME_TAG.DEATHRATTLE) == 1;
@@ -178,6 +180,8 @@ namespace Hearthstone_Deck_Tracker.Hearthstone.Entities
 		public bool IsSpell => GetTag(GAME_TAG.CARDTYPE) == (int)TAG_CARDTYPE.SPELL;
 
 		public bool IsHeroPower => GetTag(GAME_TAG.CARDTYPE) == (int)TAG_CARDTYPE.HERO_POWER;
+
+		public bool IsCurrentPlayer => HasTag(GAME_TAG.CURRENT_PLAYER);
 
 		public bool IsInZone(TAG_ZONE zone) => HasTag(GAME_TAG.ZONE) && GetTag(GAME_TAG.ZONE) == (int)zone;
 

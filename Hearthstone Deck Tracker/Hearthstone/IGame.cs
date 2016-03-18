@@ -15,6 +15,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 	{
 		Player Player { get; set; }
 		Player Opponent { get; set; }
+		Entity GameEntity { get; }
 		Entity PlayerEntity { get; }
 		Entity OpponentEntity { get; }
 		bool IsMulliganDone { get; }
@@ -44,6 +45,7 @@ namespace Hearthstone_Deck_Tracker.Hearthstone
 		void NewArenaDeck(string heroId);
 		void NewArenaCard(string cardId);
 		Task GameModeDetection(int timeout);
-		void StorePowerLog();
+		void StoreGameState();
+		string GetStoredPlayerName(int id);
 	}
 }

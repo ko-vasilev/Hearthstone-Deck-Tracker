@@ -1,6 +1,7 @@
-#region
+﻿#region
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +18,40 @@ namespace Hearthstone_Deck_Tracker.Exporting
 {
 	public class ExportingHelper
 	{
-		public static bool AddArtist => new[] {"zhCN", "zhTW", "ruRU", "koKR"}.All(x => Config.Instance.SelectedLanguage != x);
+		private static readonly Dictionary<string, string> ArtistDict = new Dictionary<string, string>
+		{
+			{"enUS", "artist"},
+			{"zhCN", "美术师"},
+			{"zhTW", "畫家"},
+			{"enGB", "artist"},
+			{"frFR", "artiste"},
+			{"deDE", "künstler"},
+			{"itIT", "artista"},
+			{"jaJP", "アーティスト"},
+			{"koKR", "아티스트"},
+			{"plPL", "grafik"},
+			{"ptBR", "artista"},
+			{"ruRU", "художник"},
+			{"esMX", "artista"},
+			{"esES", "artista"},
+		};
+		private static readonly Dictionary<string, string> ManaDict = new Dictionary<string, string>
+		{
+			{"enUS", "mana"},
+			{"zhCN", "法力值"},
+			{"zhTW", "法力"},
+			{"enGB", "mana"},
+			{"frFR", "mana"},
+			{"deDE", "mana"},
+			{"itIT", "mana"},
+			{"jaJP", "マナ"},
+			{"koKR", "마나"},
+			{"plPL", "mana"},
+			{"ptBR", "mana"},
+			{"ruRU", "мана"},
+			{"esMX", "maná"},
+			{"esES", "maná"},
+		};
 
 		public static async Task<bool> CardExists(IntPtr wndHandle, int posX, int posY, int width, int height)
 		{
@@ -79,23 +113,24 @@ namespace Hearthstone_Deck_Tracker.Exporting
 		}
 
 
-		public static string GetSearchString(Card card)
+		public static string GetArtistSearchString(string artist)
 		{
-			var searchString = card.LocalizedName.ToLowerInvariant();
-			if(AddArtist)
-				searchString += " " + card.Artist.ToLowerInvariant();
-			searchString += GetSpecialSearchCases(card.Name);
-			return searchString;
+			string artistStr;
+			if(ArtistDict.TryGetValue(Config.Instance.SelectedLanguage, out artistStr))
+				return $" {artistStr}:{artist.Split(' ').LastOrDefault()}";
+			return "";
 		}
 
-		public static string GetSpecialSearchCases(string cardName)
+		public static string GetManaSearchString(int cost)
 		{
-			//Charge and Kor'kron Elite have the same artist, while Kor'kron Elite also has the effect "Charge". 
-			//"2" seems to be the only consistent distinction across languages.
-			if(cardName == "Charge")
-				return " 2";
-			return string.Empty;
+			string manaStr;
+			if(ManaDict.TryGetValue(Config.Instance.SelectedLanguage, out manaStr))
+				return $" {manaStr}:{cost}";
+			return "";
 		}
+
+		public static string GetSearchString(Card card)
+			=> $"{card.LocalizedName}{GetArtistSearchString(card.Artist)} {GetManaSearchString(card.Cost)}".ToLowerInvariant();
 
 		public static async Task<bool> CheckForSpecialCases(Card card, double cardPosX, double card2PosX, double cardPosY, IntPtr hsHandle)
 		{

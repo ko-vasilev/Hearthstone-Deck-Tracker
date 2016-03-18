@@ -133,6 +133,9 @@ namespace Hearthstone_Deck_Tracker
 		[DefaultValue(false)]
 		public bool CloseWithHearthstone = false;
 
+		[DefaultValue(false)]
+		public bool StartHearthstoneWithHDT = false;
+
 		[DefaultValue(new string[0])]
 		public string[] ConstructedImportingIgnoreCachedIds = new string[0];
 
@@ -427,6 +430,9 @@ namespace Hearthstone_Deck_Tracker
 
 		[DefaultValue(0L)]
 		public long LastHearthStatsGamesSync = 0L;
+
+		[DefaultValue(LastPlayedDateFormat.DayMonthYear)]
+		public LastPlayedDateFormat LastPlayedDateFormat = LastPlayedDateFormat.DayMonthYear;
 
 		[DefaultValue(false)]
 		public bool LogConfigConsolePrinting = false;
@@ -809,8 +815,8 @@ namespace Hearthstone_Deck_Tracker
 		[DefaultValue(TagFilerOperation.Or)]
 		public TagFilerOperation TagOperation = TagFilerOperation.Or;
 
-		[DefaultValue("BaseLight")]
-		public string ThemeName = "BaseLight";
+		[DefaultValue(MetroTheme.BaseLight)]
+		public MetroTheme ThemeName = MetroTheme.BaseLight;
 
 		[DefaultValue(false)]
 		public bool TimerAlert = false;

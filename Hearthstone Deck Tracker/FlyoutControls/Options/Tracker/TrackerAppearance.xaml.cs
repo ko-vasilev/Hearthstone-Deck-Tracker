@@ -31,29 +31,27 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 		public void Load()
 		{
 			ComboboxAccent.ItemsSource = ThemeManager.Accents;
-			ComboboxTheme.ItemsSource = ThemeManager.AppThemes;
+			ComboboxTheme.ItemsSource = Enum.GetValues(typeof(MetroTheme));
 			ComboboxLanguages.ItemsSource = Helper.LanguageDict.Keys;
 			ComboBoxDeckLayout.ItemsSource = Enum.GetValues(typeof(DeckLayout));
 			ComboBoxIconSet.ItemsSource = Enum.GetValues(typeof(IconStyle));
 			ComboBoxClassColors.ItemsSource = Enum.GetValues(typeof(ClassColorScheme));
 			CheckboxDeckPickerCaps.IsChecked = Config.Instance.DeckPickerCaps;
 			CheckboxUseAnimations.IsChecked = Config.Instance.UseAnimations;
+			ComboBoxLastPlayedDateFormat.ItemsSource = Enum.GetValues(typeof(LastPlayedDateFormat));
 
 			if(Helper.LanguageDict.Values.Contains(Config.Instance.SelectedLanguage))
 				ComboboxLanguages.SelectedItem = Helper.LanguageDict.First(x => x.Value == Config.Instance.SelectedLanguage).Key;
 
-			var theme = string.IsNullOrEmpty(Config.Instance.ThemeName)
-				            ? ThemeManager.DetectAppStyle().Item1 : ThemeManager.AppThemes.First(t => t.Name == Config.Instance.ThemeName);
-			var accent = string.IsNullOrEmpty(Config.Instance.AccentName)
-				             ? ThemeManager.DetectAppStyle().Item2 : ThemeManager.Accents.First(a => a.Name == Config.Instance.AccentName);
-			ComboboxTheme.SelectedItem = theme;
-			ComboboxAccent.SelectedItem = accent;
+			ComboboxTheme.SelectedItem = Config.Instance.ThemeName;
+			ComboboxAccent.SelectedItem = Helper.GetAppAccent();
 
 			ComboBoxIconSet.SelectedItem = Config.Instance.ClassIconStyle;
 			ComboBoxDeckLayout.SelectedItem = Config.Instance.DeckPickerItemLayout;
 			ComboBoxClassColors.SelectedItem = Config.Instance.ClassColorScheme;
 			CheckBoxArenaStatsTextColoring.IsChecked = Config.Instance.ArenaStatsTextColoring;
 			CheckBoxShowLastPlayedDate.IsChecked = Config.Instance.ShowLastPlayedDateOnDeck;
+			ComboBoxLastPlayedDateFormat.SelectedItem = Config.Instance.LastPlayedDateFormat;
 
 			if(Config.Instance.NonLatinUseDefaultFont == null)
 			{
@@ -82,17 +80,10 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 		{
 			if(!_initialized)
 				return;
-			var theme = ComboboxTheme.SelectedItem as AppTheme;
-			if(theme != null)
-			{
-				ThemeManager.ChangeAppStyle(Application.Current, ThemeManager.DetectAppStyle().Item2, theme);
-				Config.Instance.ThemeName = theme.Name;
-				Application.Current.Resources["GrayTextColorBrush"] = theme.Name == "BaseLight"
-					                                                      ? new SolidColorBrush((Color)Application.Current.Resources["GrayTextColor1"])
-					                                                      : new SolidColorBrush((Color)Application.Current.Resources["GrayTextColor2"]);
-				Helper.OptionsMain.OptionsOverlayDeckWindows.UpdateAdditionalWindowsBackground();
-				Config.Save();
-			}
+			Config.Instance.ThemeName = (MetroTheme)ComboboxTheme.SelectedItem;
+			Config.Save();
+			Helper.UpdateAppTheme();
+			Helper.OptionsMain.OptionsOverlayDeckWindows.UpdateAdditionalWindowsBackground();
 		}
 
 		private void ComboboxLanguages_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -261,6 +252,14 @@ namespace Hearthstone_Deck_Tracker.FlyoutControls.Options.Tracker
 			Config.Instance.ShowLastPlayedDateOnDeck = false;
 			Config.Save();
 			Core.MainWindow.ShowMessage("Restart required.", "Please restart HDT for this setting to take effect.").Forget();
+		}
+
+		private void ComboBoxLastPlayedDateFormat_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			if(!_initialized)
+				return;
+			Config.Instance.LastPlayedDateFormat = (LastPlayedDateFormat)ComboBoxLastPlayedDateFormat.SelectedItem;
+			Config.Save();
 		}
 	}
 }

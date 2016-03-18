@@ -2,10 +2,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Hearthstone_Deck_Tracker.Enums;
+using Hearthstone_Deck_Tracker.Enums.Hearthstone;
 using Hearthstone_Deck_Tracker.Hearthstone;
-using Hearthstone_Deck_Tracker.Hearthstone.Entities;
 using Hearthstone_Deck_Tracker.LogReader.Interfaces;
 using Hearthstone_Deck_Tracker.Replay;
 
@@ -22,13 +21,8 @@ namespace Hearthstone_Deck_Tracker.LogReader
 			_game = game;
 			KnownCardIds = new Dictionary<int, string>();
 		}
-
-		public int AddToTurn { get; set; }
 		public bool CurrentEntityHasCardId { get; set; }
 		public int CurrentEntityId { get; set; }
-		public long CurrentOffset { get; set; }
-		public bool DoUpdate { get; set; }
-		public bool First { get; set; }
 		public bool GameEnded { get; set; }
 		public IGameHandler GameHandler { get; set; }
 		public DateTime LastGameStart { get; set; }
@@ -36,15 +30,15 @@ namespace Hearthstone_Deck_Tracker.LogReader
 		public int MaxId { get; set; }
 		public bool OpponentUsedHeroPower { get; set; }
 		public bool PlayerUsedHeroPower { get; set; }
-		public long PreviousSize { get; set; }
 		public ReplayKeyPoint ProposedKeyPoint { get; set; }
-		public dynamic WaitForController { get; set; }
 		public bool FoundSpectatorStart { get; set; }
 		public int JoustReveals { get; set; }
 		public Dictionary<int, string> KnownCardIds { get; set; }
 		public int LastCardPlayed { get; set; }
 		public bool WasInProgress { get; set; }
 		public bool SetupDone { get; set; }
+		public TAG_ZONE CurrentEntityZone { get; set; }
+		public bool DeterminedPlayers { get; set; }
 
 		public void ProposeKeyPoint(KeyPointType type, int id, ActivePlayer player)
 		{
@@ -57,29 +51,7 @@ namespace Hearthstone_Deck_Tracker.LogReader
 		{
 			if(!_game.IsMulliganDone)
 				return 0;
-			if(AddToTurn == -1)
-			{
-				var firstPlayer = _game.Entities.FirstOrDefault(e => e.Value.HasTag(GAME_TAG.FIRST_PLAYER));
-				if(firstPlayer.Value != null)
-					AddToTurn = firstPlayer.Value.GetTag(GAME_TAG.CONTROLLER) == _game.Player.Id ? 0 : 1;
-			}
-			var entity = _game.Entities.FirstOrDefault(e => e.Value != null && e.Value.Name == "GameEntity").Value;
-			if(entity != null)
-				return (entity.Tags[GAME_TAG.TURN] + (AddToTurn == -1 ? 0 : AddToTurn)) / 2;
-			return 0;
-		}
-
-		public bool PlayersTurn()
-		{
-			var firstPlayer = _game.Entities.FirstOrDefault(e => e.Value.HasTag(GAME_TAG.FIRST_PLAYER)).Value;
-			if(firstPlayer != null)
-			{
-				var offset = firstPlayer.IsPlayer ? 0 : 1;
-				var gameRoot = _game.Entities.FirstOrDefault(e => e.Value != null && e.Value.Name == "GameEntity").Value;
-				if(gameRoot != null)
-					return (gameRoot.Tags[GAME_TAG.TURN] + offset) % 2 == 1;
-			}
-			return false;
+			return (_game.GameEntity?.GetTag(GAME_TAG.TURN) + 1) / 2 ?? 0;
 		}
 
 		public void GameEndKeyPoint(bool victory, int id)
@@ -94,17 +66,14 @@ namespace Hearthstone_Deck_Tracker.LogReader
 
 		public void Reset()
 		{
-			First = true;
-			AddToTurn = -1;
 			GameEnded = false;
-			FoundSpectatorStart = false;
 			JoustReveals = 0;
 			KnownCardIds.Clear();
 			LastGameStart = DateTime.Now;
-			WaitForController = null;
 			MaxId = 0;
 			WasInProgress = false;
 			SetupDone = false;
+			DeterminedPlayers = false;
 		}
 	}
 }

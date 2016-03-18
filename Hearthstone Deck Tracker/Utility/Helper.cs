@@ -30,6 +30,7 @@ using MahApps.Metro;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 using Application = System.Windows.Application;
 using Card = Hearthstone_Deck_Tracker.Hearthstone.Card;
 using Color = System.Drawing.Color;
@@ -63,7 +64,8 @@ namespace Hearthstone_Deck_Tracker
 			{"Portuguese (Brazil)", "ptBR"},
 			{"Russian", "ruRU"},
 			{"Spanish (Mexico)", "esMX"},
-			{"Spanish (Spain)", "esES"}
+			{"Spanish (Spain)", "esES"},
+			{"Thai", "thTH"}
 		};
 
 		public static readonly List<string> LatinLanguages = new List<string>
@@ -490,24 +492,28 @@ namespace Hearthstone_Deck_Tracker
 		{
 			try
 			{
-				var regex = new Regex(@"AccountListener.OnAccountLevelInfoUpdated.*currentRegion=(?<region>(\d))");
-				var conLogPath = Path.Combine(Config.Instance.HearthstoneDirectory, "ConnectLog.txt");
-				using(var fs = new FileStream(conLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+				var bnetAppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Battle.net");
+				var files = new DirectoryInfo(bnetAppData).GetFiles();
+				var config = files.OrderByDescending(x => x.LastWriteTime).FirstOrDefault(x => Regex.IsMatch(x.Name, @"\w{8}\.config"));
+				if(config == null)
+					return Region.UNKNOWN;
+				string content;
+				using(var fs = new FileStream(config.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 				using(var reader = new StreamReader(fs))
+					content = reader.ReadToEnd();
+				dynamic json = JsonConvert.DeserializeObject(content);
+				switch((string)json.User.Client.PlayScreen.GameFamily.WTCG.LastSelectedGameRegion)
 				{
-					var lines = reader.ReadToEnd().Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries);
-					foreach(var line in lines)
-					{
-						var match = regex.Match(line);
-						if(!match.Success)
-							continue;
-						Region region;
-						if(Enum.TryParse(match.Groups["region"].Value, out region))
-						{
-							Log.Info("Current region: " + region);
-							return region;
-						}
-					}
+					case "EU":
+						return Region.EU;
+					case "US":
+						return Region.US;
+					case "KR":
+						return Region.ASIA;
+					case "CN":
+						return Region.CHINA;
+					default:
+						return Region.UNKNOWN;
 				}
 			}
 			catch(Exception ex)
@@ -637,15 +643,17 @@ namespace Hearthstone_Deck_Tracker
 
 		public static void UpdateAppTheme()
 		{
-			var theme = string.IsNullOrEmpty(Config.Instance.ThemeName)
-							? ThemeManager.DetectAppStyle().Item1 : ThemeManager.AppThemes.First(t => t.Name == Config.Instance.ThemeName);
-			var accent = string.IsNullOrEmpty(Config.Instance.AccentName)
-							 ? ThemeManager.DetectAppStyle().Item2 : ThemeManager.Accents.First(a => a.Name == Config.Instance.AccentName);
-			ThemeManager.ChangeAppStyle(Application.Current, accent, theme);
-			Application.Current.Resources["GrayTextColorBrush"] = theme.Name == "BaseLight"
+			var theme = GetAppTheme();
+			ThemeManager.ChangeAppStyle(Application.Current, GetAppAccent(), theme);
+			Application.Current.Resources["GrayTextColorBrush"] = theme.Name == MetroTheme.BaseLight.ToString()
 																	  ? new SolidColorBrush((MediaColor)Application.Current.Resources["GrayTextColor1"])
 																	  : new SolidColorBrush((MediaColor)Application.Current.Resources["GrayTextColor2"]);
 		}
+
+		public static Accent GetAppAccent() => string.IsNullOrEmpty(Config.Instance.AccentName)
+												  ? ThemeManager.DetectAppStyle().Item2 : ThemeManager.Accents.First(a => a.Name == Config.Instance.AccentName);
+
+		public static AppTheme GetAppTheme() => ThemeManager.AppThemes.First(t => t.Name == Config.Instance.ThemeName.ToString());
 
 		public static double GetScaledXPos(double left, int width, double ratio) => (width * ratio * left) + (width * (1 - ratio) / 2);
 
@@ -741,6 +749,40 @@ namespace Hearthstone_Deck_Tracker
 				foreach(var childOfChild in FindLogicalChildren<T>(childDepObj))
 					yield return childOfChild;
 			}
+		}
+
+		public static async Task WaitForFileAccess(string path, int delay)
+		{
+			while(true)
+			{
+				try
+				{
+					using(var stream = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+					{
+						if(stream.Name != null)
+							break;
+					}
+				}
+				catch
+				{
+					await Task.Delay(delay);
+				}
+			}
+		}
+
+		public static Region GetRegionByServerIp(string ip)
+		{
+			if(string.IsNullOrEmpty(ip))
+				return Region.UNKNOWN;
+			if(ip.StartsWith("12.130"))
+				return Region.US;
+			if(ip.StartsWith("80.239"))
+				return Region.EU;
+			if(ip.StartsWith("117.52"))
+				return Region.ASIA;
+			if(ip.StartsWith("114.113"))
+				return Region.CHINA;
+			return Region.UNKNOWN;
 		}
 	}
 }
